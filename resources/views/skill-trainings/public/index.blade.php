@@ -1,191 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Available Skill Trainings - PWD System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .training-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border: none;
-            border-radius: 15px;
-            overflow: hidden;
-            height: 100%;
-        }
-        .training-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        .training-header {
-            background: linear-gradient( #0056b3 100%);
-            color: white;
-            padding: 20px;
-            position: relative;
-        }
-        .training-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-        }
-        .status-badge {
-            font-size: 0.75em;
-            padding: 4px 8px;
-        }
-        .enrollment-count {
-            background: rgba(255,255,255,0.2);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-        }
-        .filter-section {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        .stats-card {
-            background: linear-gradient(135deg, #ffffff 0%, #0056b3 100%);
-            color: rgb(78, 78, 78);
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .stats-card.warning {
-            background: linear-gradient(135deg, #ffffff 0%, #0056b3 100%);
-        }
-        .stats-card.info {
-            background: linear-gradient(135deg, #ffffff 0%, #0056b3 100%);
-        }
-        .stats-card.success {
-            background: linear-gradient(135deg, #ffffff 0%, #0056b3 100%);
-        }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            color: #dee2e6;
-        }
-        .progress {
-            height: 8px;
-        }
-        .training-details {
-            font-size: 0.9em;
-        }
-    </style>
-</head>
-<body>
-    @extends('layouts.app')
+@extends('layouts.app')
 
-    @section('content')
+@section('title', 'Available Skill Trainings - PWD System')
+
+@section('content')
     <div class="container-fluid py-4">
         <!-- Header Section -->
-        <div class="row mb-4">
-            <div class="col-12">
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-primary text-white py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h1 class="h3 mb-2">Available Skill Trainings</h1>
-                        <p class="text-muted">Enhance your skills with our specialized training programs</p>
+                        <h4 class="mb-0">
+                            <i class="fas fa-graduation-cap me-2"></i>Available Skill Trainings
+                        </h4>
                     </div>
                     <div class="d-flex gap-2">
-                        <a href="{{ route('enrollments.index') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-bookmark me-2"></i>My Enrollments
-                        </a>
-                        <a href="{{ route('dashboard') }}" class="btn btn-primary">
-                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-                        </a>
+                        @auth
+                            @if(auth()->user()->role === 'pwd')
+                                <a href="{{ route('enrollments.index') }}" class="btn btn-light btn-sm">
+                                    <i class="fas fa-bookmark me-1"></i>My Enrollments
+                                </a>
+                            @endif
+                        @endauth
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="fas fa-graduation-cap fa-2x mb-3"></i>
-                    </div>
-                    <h3>{{ $totalTrainings ?? 0 }}</h3>
-                    <p class="mb-0">Total Trainings</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card warning">
-                    <div class="stats-icon">
-                        <i class="fas fa-users fa-2x mb-3"></i>
-                    </div>
-                    <h3>{{ $activeTrainings ?? 0 }}</h3>
-                    <p class="mb-0">Active Now</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card info">
-                    <div class="stats-icon">
-                        <i class="fas fa-calendar-check fa-2x mb-3"></i>
-                    </div>
-                    <h3>{{ $upcomingTrainings ?? 0 }}</h3>
-                    <p class="mb-0">Upcoming</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card success">
-                    <div class="stats-icon">
-                        <i class="fas fa-user-check fa-2x mb-3"></i>
-                    </div>
-                    <h3>{{ $userEnrollments ?? 0 }}</h3>
-                    <p class="mb-0">My Enrollments</p>
-                </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">Enhance your skills with our specialized training programs designed for PWD users</p>
             </div>
         </div>
 
         <!-- Filters Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="filter-section">
-                    <form method="GET" action="{{ route('skill-trainings.public.index') }}">
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <label for="status" class="form-label">Training Status</label>
-                                <select class="form-select" id="status" name="status">
-                                    <option value="">All Status</option>
-                                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active (Ongoing)</option>
-                                    <option value="upcoming" {{ request('status') == 'upcoming' ? 'selected' : '' }}>Upcoming</option>
-                                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="location" class="form-label">Location</label>
-                                <input type="text" class="form-control" id="location" name="location"
-                                       value="{{ request('location') }}" placeholder="Enter location...">
-                            </div>
-                            <div class="col-md-3">
-                                <label for="trainer" class="form-label">Trainer</label>
-                                <input type="text" class="form-control" id="trainer" name="trainer"
-                                       value="{{ request('trainer') }}" placeholder="Search trainer...">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">&nbsp;</label>
-                                <div class="d-grid gap-2 d-md-flex">
-                                    <button type="submit" class="btn btn-primary flex-fill">
-                                        <i class="fas fa-search me-2"></i>Search
-                                    </button>
-                                    @if(request()->anyFilled(['status', 'location', 'trainer']))
-                                        <a href="{{ route('skill-trainings.public.index') }}" class="btn btn-outline-secondary">
-                                            <i class="fas fa-times me-2"></i>Clear
-                                        </a>
-                                    @endif
-                                </div>
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body">
+                <form method="GET" action="{{ route('skill-trainings.public.index') }}">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label small fw-semibold">
+                                <i class="fas fa-filter me-1"></i>Training Status
+                            </label>
+                            <select class="form-select form-select-sm" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active (Ongoing)</option>
+                                <option value="upcoming" {{ request('status') == 'upcoming' ? 'selected' : '' }}>Upcoming</option>
+                                <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="location" class="form-label small fw-semibold">
+                                <i class="fas fa-map-marker-alt me-1"></i>Location
+                            </label>
+                            <input type="text" class="form-control form-control-sm" id="location" name="location"
+                                   value="{{ request('location') }}" placeholder="Enter location...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="trainer" class="form-label small fw-semibold">
+                                <i class="fas fa-user-tie me-1"></i>Trainer
+                            </label>
+                            <input type="text" class="form-control form-control-sm" id="trainer" name="trainer"
+                                   value="{{ request('trainer') }}" placeholder="Search trainer...">
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                                    <i class="fas fa-search me-1"></i>Search
+                                </button>
+                                @if(request()->anyFilled(['status', 'location', 'trainer']))
+                                    <a href="{{ route('skill-trainings.public.index') }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                @endif
                             </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -193,20 +80,20 @@
         <div class="row">
             @forelse($skillTrainings as $training)
                 <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="card training-card h-100">
-                        <div class="training-header position-relative">
-                            <span class="training-badge">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h5 class="card-title mb-0">{{ $training->title }}</h5>
                                 @if($training->start_date->isFuture())
-                                    <span class="badge bg-warning status-badge">Upcoming</span>
+                                    <span class="badge bg-warning text-dark">Upcoming</span>
                                 @elseif($training->end_date->isPast())
-                                    <span class="badge bg-secondary status-badge">Completed</span>
+                                    <span class="badge bg-secondary">Completed</span>
                                 @else
-                                    <span class="badge bg-success status-badge">Ongoing</span>
+                                    <span class="badge bg-success">Ongoing</span>
                                 @endif
-                            </span>
-                            <h5 class="card-title mb-2">{{ $training->title }}</h5>
-                            <p class="card-text mb-0">
-                                <i class="fas fa-user-tie me-2"></i>{{ $training->trainer }}
+                            </div>
+                            <p class="text-muted mb-0 mt-2">
+                                <i class="fas fa-user-tie me-1"></i>{{ $training->trainer }}
                             </p>
                         </div>
 
@@ -215,20 +102,20 @@
                                 {{ Str::limit($training->description, 120) }}
                             </p>
 
-                            <div class="training-details mb-3">
+                            <div class="mb-3">
                                 <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                    <i class="fas fa-map-marker-alt text-muted me-2"></i>
                                     <small>{{ $training->location }}</small>
                                 </div>
                                 <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                    <i class="fas fa-calendar-alt text-muted me-2"></i>
                                     <small>
                                         {{ $training->start_date->format('M d, Y') }} -
                                         {{ $training->end_date->format('M d, Y') }}
                                     </small>
                                 </div>
-                                <div class="d-flex align-items-center mb-3">
-                                    <i class="fas fa-users text-primary me-2"></i>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-users text-muted me-2"></i>
                                     <small>
                                         {{ $training->enrollments_count ?? $training->enrollments->count() }} /
                                         {{ $training->max_participants }} enrolled
@@ -240,9 +127,9 @@
                             @php
                                 $enrollmentCount = $training->enrollments_count ?? $training->enrollments->count();
                                 $enrollmentPercentage = min(100, ($enrollmentCount / $training->max_participants) * 100);
-                                $progressColor = $enrollmentPercentage >= 90 ? 'bg-danger' : ($enrollmentPercentage >= 75 ? 'bg-warning' : 'bg-success');
+                                $progressColor = $enrollmentPercentage >= 90 ? 'bg-danger' : ($enrollmentPercentage >= 75 ? 'bg-warning' : 'bg-primary');
                             @endphp
-                            <div class="progress mb-3">
+                            <div class="progress mb-3" style="height: 6px;">
                                 <div class="progress-bar {{ $progressColor }}"
                                      style="width: {{ $enrollmentPercentage }}%"
                                      title="{{ number_format($enrollmentPercentage, 1) }}% filled">
@@ -251,47 +138,58 @@
 
                             <!-- Action Buttons -->
                             <div class="d-grid gap-2 mt-auto">
-                                @php
-                                    $userEnrollment = $training->enrollments->where('user_id', auth()->id())->first();
-                                    $isFull = $enrollmentCount >= $training->max_participants;
-                                    $canEnroll = !$userEnrollment && !$isFull && $training->is_active && $training->start_date->isFuture();
-                                @endphp
+                                @auth
+                                    @if(auth()->user()->role === 'pwd')
+                                        @php
+                                            $userEnrollment = $training->enrollments->where('user_id', auth()->id())->first();
+                                            $isFull = $enrollmentCount >= $training->max_participants;
+                                        @endphp
 
-                                @if($userEnrollment)
-                                    <button class="btn btn-success" disabled>
-                                        <i class="fas fa-check me-2"></i>Already Enrolled
-                                    </button>
-                                    <small class="text-muted text-center">
-                                        Status:
-                                        <span class="badge bg-{{ $userEnrollment->status == 'approved' ? 'success' : ($userEnrollment->status == 'pending' ? 'warning' : 'secondary') }}">
-                                            {{ ucfirst($userEnrollment->status) }}
-                                        </span>
-                                    </small>
-                                @elseif($isFull)
-                                    <button class="btn btn-secondary" disabled>
-                                        <i class="fas fa-times me-2"></i>Training Full
-                                    </button>
-                                @elseif(!$training->is_active)
-                                    <button class="btn btn-secondary" disabled>
-                                        <i class="fas fa-pause me-2"></i>Not Available
-                                    </button>
-                                @elseif($training->start_date->isPast())
-                                    <button class="btn btn-secondary" disabled>
-                                        <i class="fas fa-clock me-2"></i>Training Started
-                                    </button>
-                                @else
-                                    <form action="{{ route('enrollments.store') }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="skill_training_id" value="{{ $training->id }}">
-                                        <button type="submit" class="btn btn-primary w-100">
-                                            <i class="fas fa-bookmark me-2"></i>Enroll Now
+                                        @if($userEnrollment)
+                                            <button class="btn btn-success btn-sm" disabled>
+                                                <i class="fas fa-check me-1"></i>Already Enrolled
+                                            </button>
+                                            <small class="text-muted text-center">
+                                                Status:
+                                                <span class="badge bg-{{ $userEnrollment->status == 'approved' ? 'success' : ($userEnrollment->status == 'pending' ? 'warning' : 'secondary') }}">
+                                                    {{ ucfirst($userEnrollment->status) }}
+                                                </span>
+                                            </small>
+                                        @elseif($isFull)
+                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="fas fa-times me-1"></i>Training Full
+                                            </button>
+                                        @elseif(!$training->is_active)
+                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="fas fa-pause me-1"></i>Not Available
+                                            </button>
+                                        @elseif($training->start_date->isPast())
+                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="fas fa-clock me-1"></i>Training Started
+                                            </button>
+                                        @else
+                                            <form action="{{ route('enrollments.store') }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="skill_training_id" value="{{ $training->id }}">
+                                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                    <i class="fas fa-user-plus me-1"></i>Enroll Now
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @else
+                                        <button class="btn btn-secondary btn-sm" disabled>
+                                            <i class="fas fa-info-circle me-1"></i>PWD Users Only
                                         </button>
-                                    </form>
-                                @endif
+                                    @endif
+                                @else
+                                    <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-sign-in-alt me-1"></i>Login to Enroll
+                                    </a>
+                                @endauth
 
                                 <a href="{{ route('skill-trainings.public.show', $training->id) }}"
-                                   class="btn btn-outline-primary">
-                                    <i class="fas fa-info-circle me-2"></i>View Details
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>View Details
                                 </a>
                             </div>
                         </div>
@@ -323,39 +221,102 @@
         @if($skillTrainings->hasPages())
         <div class="row mt-4">
             <div class="col-12">
-                <div class="d-flex justify-content-center">
-                    {{ $skillTrainings->links() }}
+                <div class="d-flex justify-content-center pagination-compact-wrapper">
+                    {{ $skillTrainings->withQueryString()->links('pagination::bootstrap-4') }}
                 </div>
             </div>
         </div>
         @endif
     </div>
+@endsection
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+@section('styles')
+<style>
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+
+    .progress {
+        border-radius: 10px;
+    }
+
+    /* Compact Pagination Styles */
+    .pagination-compact-wrapper .pagination {
+        margin-bottom: 0;
+        gap: 4px;
+    }
+
+    .pagination-compact-wrapper .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 4px;
+        margin: 0 2px;
+        min-width: 32px;
+        text-align: center;
+    }
+
+    .pagination-compact-wrapper .page-item:first-child .page-link,
+    .pagination-compact-wrapper .page-item:last-child .page-link {
+        border-radius: 4px;
+    }
+
+    .pagination-compact-wrapper .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+        font-weight: 600;
+    }
+
+    .pagination-compact-wrapper .page-item.disabled .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .pagination-compact-wrapper .page-link:hover {
+        background-color: #f8f9fa;
+        border-color: #007bff;
+        color: #007bff;
+    }
+
+    /* Make pagination responsive */
+    @media (max-width: 768px) {
+        .pagination-compact-wrapper .page-link {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.75rem;
+            min-width: 28px;
+        }
+
+        .pagination-compact-wrapper .pagination {
+            gap: 2px;
+        }
+
+        .pagination-compact-wrapper .page-link {
+            margin: 0 1px;
+        }
+    }
+</style>
+@endsection
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
         // Add confirmation for enrollment
-        document.addEventListener('DOMContentLoaded', function() {
-            const enrollmentForms = document.querySelectorAll('form[action="{{ route("enrollments.store") }}"]');
+        const enrollmentForms = document.querySelectorAll('form[action*="enrollments"]');
 
-            enrollmentForms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const trainingTitle = this.closest('.training-card').querySelector('.card-title').textContent;
-                    if (!confirm(`Are you sure you want to enroll in "${trainingTitle}"?`)) {
-                        e.preventDefault();
-                    }
-                });
-            });
-
-            // Auto-hide alerts after 5 seconds
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                setTimeout(() => {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }, 5000);
+        enrollmentForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const trainingTitle = this.closest('.card').querySelector('.card-title').textContent;
+                if (!confirm(`Are you sure you want to enroll in "${trainingTitle}"?`)) {
+                    e.preventDefault();
+                }
             });
         });
-    </script>
-    @endsection
-</body>
-</html>
+    });
+</script>
+@endsection

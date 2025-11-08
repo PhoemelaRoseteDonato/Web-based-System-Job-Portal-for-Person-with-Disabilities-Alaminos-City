@@ -125,6 +125,17 @@
                                             <tr class="border-bottom">
                                                 <td class="ps-4">
                                                     <div class="d-flex align-items-start">
+                                                        <div class="me-3 mt-1">
+                                                            @php
+                                                                $iconClass = match($document->mime_type) {
+                                                                    'application/pdf' => 'fa-file-pdf text-danger',
+                                                                    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'fa-file-word text-primary',
+                                                                    'image/jpeg', 'image/jpg', 'image/png' => 'fa-file-image text-info',
+                                                                    default => 'fa-file text-secondary'
+                                                                };
+                                                            @endphp
+                                                            <i class="fas {{ $iconClass }} fa-2x"></i>
+                                                        </div>
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 text-dark">{{ $document->name }}</h6>
                                                             @if($document->description)
@@ -281,7 +292,7 @@
     }
 </style>
 @endsection
-@include('partials.accessibility-widget') 
+@include('partials.accessibility-widget')
 @section('scripts')
 <script>
     // Initialize tooltips

@@ -11,10 +11,10 @@
 
     <div class="row g-0 min-vh-100">
         <!-- Left Side - Welcome Section with Accessibility Features -->
-        <div class="col-lg-6 d-none d-lg-flex bg-primary text-white align-items-center justify-content-center p-5">
+        <div class="col-lg-6 d-none d-lg-flex text-white align-items-center justify-content-center p-5" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
             <div class="text-center" style="max-width: 500px;">
                 <!-- Accessibility Controls -->
-                <div class="accessibility-controls mb-5 p-4 bg-primary-dark rounded-lg">
+                <div class="accessibility-controls mb-5 p-4 rounded-lg" style="background-color: rgba(0, 0, 0, 0.2);">
                     <h2 class="h3 mb-4" id="accessibility-heading">
                         <i class="fas fa-universal-access me-2"></i>Accessibility Features
                     </h2>
@@ -82,7 +82,7 @@
             <div class="w-100" style="max-width: 400px;" id="main-content" tabindex="-1">
                 <!-- Logo and Header -->
                 <div class="text-center mb-5">
-                    <h1 class="h2 fw-bold text-primary mb-2" id="login-heading">
+                    <h1 class="h2 fw-bold mb-2" id="login-heading" style="color: #10b981;">
                         Sign In to Your Account
                     </h1>
                     <p class="text-muted">
@@ -150,7 +150,7 @@
                             <!-- Email Input with Enhanced Accessibility -->
                             <div class="mb-4">
                                 <label for="login" class="form-label fw-semibold">
-                                    <i class="fas fa-envelope me-2 text-primary" aria-hidden="true"></i>
+                                    <i class="fas fa-envelope me-2 text-success" aria-hidden="true"></i>
                                     Email or Username
                                     <span class="text-danger" aria-hidden="true">*</span>
                                 </label>
@@ -190,7 +190,7 @@
                             <!-- Password Input with Toggle Visibility -->
                             <div class="mb-4">
                                 <label for="password" class="form-label fw-semibold">
-                                    <i class="fas fa-lock me-2 text-primary" aria-hidden="true"></i>
+                                    <i class="fas fa-lock me-2 text-success" aria-hidden="true"></i>
                                     Password
                                     <span class="text-danger" aria-hidden="true">*</span>
                                 </label>
@@ -255,9 +255,10 @@
                             <div class="d-grid mb-4">
                                 <button
                                     type="submit"
-                                    class="btn btn-primary btn-lg fw-semibold py-3"
+                                    class="btn btn-success btn-lg fw-semibold py-3"
                                     id="login-button"
                                     aria-describedby="login-help"
+                                    style="border-radius: 50px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;"
                                 >
                                     <i class="fas fa-sign-in-alt me-2" aria-hidden="true"></i>
                                     Sign In
@@ -489,23 +490,23 @@ document.addEventListener('DOMContentLoaded', function() {
 .high-contrast {
     --bs-body-color: #000 !important;
     --bs-body-bg: #fff !important;
-    --bs-primary: #166534 !important;
+    --bs-primary: #059669 !important;
     --bs-border-color: #000 !important;
     filter: contrast(1.5);
 }
 .high-contrast .card {
     border: 2px solid #000 !important;
 }
-.high-contrast .btn-primary {
-    background-color: #166534 !important;
-    border-color: #166534 !important;
+.high-contrast .btn-success {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
     color: #fff !important;
 }
 .high-contrast .text-muted {
     color: #666 !important;
 }
-.high-contrast .bg-primary {
-    background-color: #166534 !important;
+.high-contrast .bg-success {
+    background-color: #059669 !important;
 }
 
 .simplified-layout .card {
@@ -520,8 +521,9 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Focus styles for keyboard navigation */
 .form-control:focus,
 .btn:focus {
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
     outline: 2px solid transparent !important;
+    border-color: #10b981 !important;
 }
 
 /* High contrast focus */

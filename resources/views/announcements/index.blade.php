@@ -8,19 +8,13 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-light shadow border-bottom" style="background-color: #f8f9fa;">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">PWD System - Alaminos City</a>
+            <a class="navbar-brand text-dark fw-bold" href="{{ route('dashboard') }}">PWD System - Alaminos City</a>
             <div class="navbar-nav ms-auto">
-                <a class="nav-link text-white" href="{{ route('dashboard') }}">Dashboard</a>
-                <a class="nav-link text-white" href="{{ route('profile.show') }}">Profile</a>
-                <a class="nav-link text-white" href="{{ route('logout') }}"
-                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                    Logout
+                <a class="nav-link text-dark" href="{{ route('admin.dashboard') }}" title="Back to Dashboard">
+                    <i class="fas fa-arrow-left"></i>
                 </a>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                    @csrf
-                </form>
             </div>
         </div>
     </nav>
@@ -28,7 +22,7 @@
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Announcements Management</h2>
-            <a href="{{ route('announcements.create') }}" class="btn btn-primary">
+            <a href="{{ route('admin.announcements.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Create New Announcement
             </a>
         </div>
@@ -65,13 +59,13 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{{ route('announcements.show', $announcement->id) }}" class="btn btn-sm btn-info">
+                                        <a href="{{ route('admin.announcements.show', $announcement->id) }}" class="btn btn-sm btn-info">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('announcements.edit', $announcement->id) }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ route('admin.announcements.edit', $announcement->id) }}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <form action="{{ route('announcements.destroy', $announcement->id) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('admin.announcements.destroy', $announcement->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-danger"
@@ -85,7 +79,7 @@
                                 <tr>
                                     <td colspan="5" class="text-center text-muted py-4">
                                         <i class="fas fa-bullhorn fa-2x mb-2"></i><br>
-                                        No announcements found. <a href="{{ route('announcements.create') }}">Create the first one!</a>
+                                        No announcements found. <a href="{{ route('admin.announcements.create') }}">Create the first one!</a>
                                     </td>
                                 </tr>
                             @endforelse

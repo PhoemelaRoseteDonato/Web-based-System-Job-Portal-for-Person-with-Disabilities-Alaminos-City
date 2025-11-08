@@ -1,12 +1,36 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Skill Training - PWD System')
+@section('title', 'Edit Skill Training - Admin Panel')
+
+@section('page-title', 'Edit Skill Training')
 
 @section('content')
 <div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-edit"></i> Edit Skill Training: {{ $skillTraining->title }}
+        </h1>
+        <a href="{{ route('admin.skill-trainings.index') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Trainings
+        </a>
+    </div>
+
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-exclamation-triangle"></i> Validation Errors:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
+        <div class="col-lg-10">
+            <div class="card shadow">
                 <div class="card-header bg-warning text-dark">
                     <h4 class="mb-0">
                         <i class="fas fa-edit"></i>

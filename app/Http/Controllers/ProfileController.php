@@ -7,6 +7,8 @@ use App\Models\PwdProfile;
 use App\Models\DisabilityType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
@@ -235,7 +237,7 @@ class ProfileController extends Controller
                 'disability_severity' => $validated['disability_level'],
                 'assistive_devices' => $validated['assistive_devices'] ?? null,
                 'special_needs' => $validated['medical_conditions'] ?? null,
-                'accessibility_needs' => $validated['accommodation_needs'] ?? null,
+                'accessibility_needs' => !empty($validated['accommodation_needs']) ? json_encode(['notes' => $validated['accommodation_needs']]) : null,
                 'skills' => $validated['skills'] ?? null,
                 'qualifications' => $validated['interests'] ?? null,
                 'emergency_contact_name' => $validated['emergency_contact_name'],
@@ -271,8 +273,8 @@ class ProfileController extends Controller
                 ->with('success', 'PWD profile completed successfully!');
 
         } catch (\Exception $e) {
-            \Log::error('Profile completion error: ' . $e->getMessage());
-            \Log::error('Mapped data: ' . print_r($mappedData, true));
+            Log::error('Profile completion error: ' . $e->getMessage());
+            Log::error('Exception trace: ' . $e->getTraceAsString());
             return redirect()->back()
                 ->with('error', 'Error completing profile: ' . $e->getMessage())
                 ->withInput();
@@ -309,16 +311,36 @@ public function uploadResume(Request $request)
     ]);
 
     try {
+        $file = $request->file('resume');
+
         // Delete old resume if exists
         if ($user->resume) {
             Storage::disk('public')->delete($user->resume);
+
+            // Also delete old resume document entry if exists
+            \App\Models\Document::where('user_id', $user->id)
+                ->where('type', 'resume')
+                ->where('file_path', $user->resume)
+                ->delete();
         }
 
         // Store new resume
-        $resumePath = $request->file('resume')->store('resumes', 'public');
+        $resumePath = $file->store('resumes', 'public');
         $user->update(['resume' => $resumePath]);
 
-        return redirect()->back()->with('success', 'Resume uploaded successfully!');
+        // Create document entry for tracking in Documents section
+        \App\Models\Document::create([
+            'user_id' => $user->id,
+            'type' => 'resume',
+            'name' => 'Resume - ' . $file->getClientOriginalName(),
+            'file_path' => $resumePath,
+            'mime_type' => $file->getClientMimeType(),
+            'size' => $file->getSize(),
+            'description' => 'Resume uploaded from profile',
+            'is_verified' => false,
+        ]);
+
+        return redirect()->back()->with('success', 'Resume uploaded successfully! You can view it in your Documents section.');
 
     } catch (\Exception $e) {
         return redirect()->back()->with('error', 'Error uploading resume: ' . $e->getMessage());
@@ -336,7 +358,13 @@ public function downloadResume()
         return redirect()->back()->with('error', 'No resume found.');
     }
 
-    return Storage::disk('public')->download($user->resume, $user->resume_file_name);
+    $filePath = storage_path('app/public/' . $user->resume);
+
+    if (!file_exists($filePath)) {
+        return redirect()->back()->with('error', 'Resume file not found.');
+    }
+
+    return response()->download($filePath, $user->resume_file_name ?? basename($user->resume));
 }
 
 /**

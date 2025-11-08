@@ -196,7 +196,7 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/overview', [EmployerController::class, 'analyticsOverview'])->name('overview');
             Route::get('/performance', [EmployerController::class, 'performanceMetrics'])->name('performance');
-            Route::get('/applications-trend', [EmployerController::class, 'applicationTrends'])->name('applications-trend');
+            Route::get('/application-trends', [EmployerController::class, 'applicationTrends'])->name('application-trends');
             Route::get('/jobs-performance', [EmployerController::class, 'jobsPerformance'])->name('jobs-performance');
         });
     });
@@ -297,6 +297,15 @@ Route::middleware(['auth'])->group(function () {
         // Settings route
         Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
 
+        // Admin Profile Management
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\AdminProfileController::class, 'show'])->name('show');
+            Route::put('/', [App\Http\Controllers\Admin\AdminProfileController::class, 'update'])->name('update');
+            Route::put('/password', [App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('update-password');
+            Route::post('/avatar', [App\Http\Controllers\Admin\AdminProfileController::class, 'updateAvatar'])->name('update-avatar');
+            Route::delete('/avatar', [App\Http\Controllers\Admin\AdminProfileController::class, 'removeAvatar'])->name('remove-avatar');
+        });
+
         // User Management
         Route::prefix('users')->name('users.')->group(function () {
             Route::get('/', [AdminController::class, 'users'])->name('index');
@@ -307,6 +316,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{user}/deactivate', [AdminController::class, 'deactivateUser'])->name('deactivate');
             Route::post('/{user}/unlock', [AdminController::class, 'unlockUser'])->name('unlock');
             Route::post('/{user}/role', [AdminController::class, 'updateUserRole'])->name('update-role');
+            Route::delete('/{user}', [AdminController::class, 'deleteUser'])->name('destroy');
         });
 
         // Employer Verification Management
@@ -345,6 +355,7 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('enrollments')->name('enrollments.')->group(function () {
             Route::get('/', [TrainingEnrollmentController::class, 'adminIndex'])->name('index');
             Route::post('/{enrollment}/status', [TrainingEnrollmentController::class, 'updateStatus'])->name('updateStatus');
+            Route::post('/bulk-update', [TrainingEnrollmentController::class, 'bulkUpdate'])->name('bulkUpdate');
         });
 
         // Job Posting Management (Admin-specific)

@@ -64,20 +64,59 @@ class EmployerVerificationController extends Controller
 
             // Business registration document
             if ($request->hasFile('business_registration')) {
-                $documents['business_registration'] = $request->file('business_registration')
-                    ->store("employer-verification/{$user->id}", 'private');
+                $file = $request->file('business_registration');
+                $path = $file->store("employer-verification/{$user->id}", 'private');
+                $documents['business_registration'] = $path;
+
+                // Create document entry visible in Documents section
+                \App\Models\Document::create([
+                    'user_id' => $user->id,
+                    'type' => 'certificate',
+                    'name' => 'Business Registration - Verification',
+                    'file_path' => $path,
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                    'description' => 'Business registration certificate submitted for employer verification',
+                    'is_verified' => false,
+                ]);
             }
 
             // Tax clearance document
             if ($request->hasFile('tax_clearance')) {
-                $documents['tax_clearance'] = $request->file('tax_clearance')
-                    ->store("employer-verification/{$user->id}", 'private');
+                $file = $request->file('tax_clearance');
+                $path = $file->store("employer-verification/{$user->id}", 'private');
+                $documents['tax_clearance'] = $path;
+
+                // Create document entry visible in Documents section
+                \App\Models\Document::create([
+                    'user_id' => $user->id,
+                    'type' => 'certificate',
+                    'name' => 'Tax Clearance - Verification',
+                    'file_path' => $path,
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                    'description' => 'Tax clearance certificate submitted for employer verification',
+                    'is_verified' => false,
+                ]);
             }
 
             // Additional documents
             if ($request->hasFile('additional_documents')) {
                 foreach ($request->file('additional_documents') as $index => $file) {
-                    $documents['additional_' . $index] = $file->store("employer-verification/{$user->id}", 'private');
+                    $path = $file->store("employer-verification/{$user->id}", 'private');
+                    $documents['additional_' . $index] = $path;
+
+                    // Create document entry visible in Documents section
+                    \App\Models\Document::create([
+                        'user_id' => $user->id,
+                        'type' => 'other',
+                        'name' => 'Additional Document ' . ($index + 1) . ' - Verification',
+                        'file_path' => $path,
+                        'mime_type' => $file->getClientMimeType(),
+                        'size' => $file->getSize(),
+                        'description' => 'Additional document submitted for employer verification',
+                        'is_verified' => false,
+                    ]);
                 }
             }
 

@@ -44,6 +44,8 @@ class PwdProfile extends Model
         'birthdate' => 'date',
         'is_employed' => 'boolean',
         'profile_completed' => 'boolean',
+        'accessibility_needs' => 'array',
+        'assistive_devices' => 'array',
     ];
 
     /**

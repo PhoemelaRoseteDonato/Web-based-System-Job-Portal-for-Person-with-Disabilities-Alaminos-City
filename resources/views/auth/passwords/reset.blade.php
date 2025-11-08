@@ -7,7 +7,7 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow-lg border-0">
-                <div class="card-header bg-primary text-white text-center py-4">
+                <div class="card-header text-white text-center py-4" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                     <h2 class="h4 mb-0">
                         <i class="fas fa-key me-2"></i>Reset Your Password
                     </h2>
@@ -28,7 +28,7 @@
                         <!-- Email Address -->
                         <div class="mb-4">
                             <label for="email" class="form-label">
-                                <i class="fas fa-envelope me-2"></i>Email Address
+                                <i class="fas fa-envelope me-2 text-success"></i>Email Address
                             </label>
                             <input id="email" type="email"
                                    class="form-control @error('email') is-invalid @enderror"
@@ -49,7 +49,7 @@
                         <!-- Password -->
                         <div class="mb-4">
                             <label for="password" class="form-label">
-                                <i class="fas fa-lock me-2"></i>New Password
+                                <i class="fas fa-lock me-2 text-success"></i>New Password
                             </label>
                             <div class="input-group">
                                 <input id="password" type="password"

@@ -222,14 +222,29 @@ class ResetPasswordController extends Controller
                 ->with('error', 'Invalid password reset token.');
         }
 
+        // Get email from request
+        $email = $request->email ?? $request->query('email');
+        
+        if (!$email) {
+            return redirect()->route('password.request')
+                ->with('error', 'Email address is required for password reset.');
+        }
+
         // Check if token exists and is valid in the database
+        // Laravel stores tokens as hashed values, so we need to check by email first
         $tokenData = DB::table('password_reset_tokens')
-            ->where('token', hash('sha256', $token))
+            ->where('email', $email)
             ->first();
 
         if (!$tokenData) {
             return redirect()->route('password.request')
                 ->with('error', 'This password reset link is invalid or has expired. Please request a new one.');
+        }
+
+        // Verify the token matches (Laravel uses Hash::check for token verification)
+        if (!Hash::check($token, $tokenData->token)) {
+            return redirect()->route('password.request')
+                ->with('error', 'This password reset link is invalid. Please request a new one.');
         }
 
         // Check if token is expired (default: 60 minutes)
@@ -238,21 +253,15 @@ class ResetPasswordController extends Controller
 
         if ($tokenAge > $tokenExpireMinutes) {
             // Delete expired token
-            DB::table('password_reset_tokens')->where('token', hash('sha256', $token))->delete();
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
 
             return redirect()->route('password.request')
                 ->with('error', 'This password reset link has expired. Please request a new one.');
         }
 
-        // Check if email from token matches the request email (if provided)
-        if ($request->email && $tokenData->email !== $request->email) {
-            return redirect()->route('password.request')
-                ->with('error', 'The email address does not match the reset token.');
-        }
-
         return view('auth.passwords.reset')->with([
             'token' => $token,
-            'email' => $request->email ?: $tokenData->email
+            'email' => $email
         ]);
     }
 

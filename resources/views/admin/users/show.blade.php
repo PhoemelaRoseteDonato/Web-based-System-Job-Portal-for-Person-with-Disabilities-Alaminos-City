@@ -12,6 +12,11 @@
             <a href="{{ route('admin.users.index') }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-arrow-left"></i> Back to Users
             </a>
+            @if($user->id !== auth()->id())
+                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteUserModal">
+                    <i class="fas fa-trash"></i> Delete User
+                </button>
+            @endif
         </div>
     </div>
 
@@ -138,11 +143,25 @@
 
                         @if(!empty($securityOverview['recommendations']))
                             <div class="mt-3">
-                                <strong>Recommendations:</strong>
-                                <ul class="list-unstyled mt-1">
+                                <strong>Security Recommendations:</strong>
+                                <ul class="list-unstyled mt-2">
                                     @foreach($securityOverview['recommendations'] as $recommendation)
-                                        <li class="text-sm text-danger">
-                                            <i class="fas fa-exclamation-circle"></i> {{ $recommendation }}
+                                        @php
+                                            $badgeClass = match($recommendation['priority']) {
+                                                'high' => 'danger',
+                                                'medium' => 'warning',
+                                                'low' => 'info',
+                                                default => 'secondary'
+                                            };
+                                        @endphp
+                                        <li class="mb-2 d-flex align-items-start">
+                                            <span class="badge bg-{{ $badgeClass }} me-2 mt-1">
+                                                {{ strtoupper($recommendation['priority']) }}
+                                            </span>
+                                            <span>
+                                                <i class="{{ $recommendation['icon'] ?? 'fas fa-info-circle' }} me-1"></i>
+                                                {{ $recommendation['message'] }}
+                                            </span>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -434,4 +453,91 @@
         </div>
     </div>
 </div>
+
+<!-- Delete User Confirmation Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteUserModalLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm User Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>WARNING: This action cannot be undone!</strong>
+                </div>
+                
+                <p>You are about to permanently delete the following user account:</p>
+                
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <p class="mb-1"><strong>Name:</strong> {{ $user->name }}</p>
+                        <p class="mb-1"><strong>Email:</strong> {{ $user->email }}</p>
+                        <p class="mb-1"><strong>Role:</strong> 
+                            <span class="badge bg-{{ $user->role === 'admin' ? 'danger' : ($user->role === 'pwd' ? 'success' : 'info') }}">
+                                {{ ucfirst($user->role) }}
+                            </span>
+                        </p>
+                        <p class="mb-0"><strong>User ID:</strong> {{ $user->id }}</p>
+                    </div>
+                </div>
+
+                <p><strong>This will also delete:</strong></p>
+                <ul>
+                    <li>User profile and personal information</li>
+                    <li>All job applications ({{ $user->jobApplications->count() }})</li>
+                    <li>All training enrollments ({{ $user->trainingEnrollments->count() }})</li>
+                    <li>All notifications</li>
+                    <li>All activity history</li>
+                </ul>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    Please ensure you have backed up any important data before proceeding.
+                </div>
+
+                <p class="mb-0">Type <strong>DELETE</strong> to confirm:</p>
+                <input type="text" class="form-control mt-2" id="deleteConfirmInput" placeholder="Type DELETE to confirm">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" id="deleteUserForm">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                        <i class="fas fa-trash"></i> Delete Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@section('scripts')
+    @parent
+
+    <script>
+        // Enable delete button only when user types "DELETE"
+        document.getElementById('deleteConfirmInput').addEventListener('input', function() {
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            if (this.value === 'DELETE') {
+                confirmBtn.disabled = false;
+            } else {
+                confirmBtn.disabled = true;
+            }
+        });
+
+        // Reset input when modal is closed
+        document.getElementById('deleteUserModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('deleteConfirmInput').value = '';
+            document.getElementById('confirmDeleteBtn').disabled = true;
+        });
+    </script>
 @endsection

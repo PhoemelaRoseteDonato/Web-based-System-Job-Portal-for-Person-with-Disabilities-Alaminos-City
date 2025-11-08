@@ -9,10 +9,10 @@
             <i class="fas fa-edit"></i> Edit Job Posting
         </h1>
         <div>
-            <a href="{{ route('job-postings.show', $jobPosting->id) }}" class="btn btn-info btn-sm">
+            <a href="{{ route('admin.job-postings.show', $jobPosting->id) }}" class="btn btn-info btn-sm">
                 <i class="fas fa-eye"></i> View
             </a>
-            <a href="{{ route('job-postings.index') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ route('admin.job-postings.index') }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-arrow-left"></i> Back to List
             </a>
         </div>
@@ -24,7 +24,7 @@
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Edit Job Posting: {{ $jobPosting->title }}</h6>
                     <div class="btn-group">
-                        <form action="{{ route('job-postings.duplicate', $jobPosting->id) }}" method="POST" class="d-inline">
+                        <form action="{{ route('admin.job-postings.duplicate', $jobPosting->id) }}" method="POST" class="d-inline">
                             @csrf
                             <button type="submit" class="btn btn-outline-secondary btn-sm"
                                     onclick="return confirm('Duplicate this job posting?')">
@@ -39,7 +39,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('job-postings.update', $jobPosting->id) }}" id="jobPostingForm">
+                    <form method="POST" action="{{ route('admin.job-postings.update', $jobPosting->id) }}" id="jobPostingForm">
                         @csrf
                         @method('PUT')
 

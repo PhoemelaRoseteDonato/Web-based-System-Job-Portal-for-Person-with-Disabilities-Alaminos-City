@@ -229,15 +229,19 @@
                                     <td>
                                         <div class="mb-2">
                                             @if($user->role === 'admin')
-                                                <span class="badge badge-danger">
+                                                <span class="badge bg-danger text-white">
                                                     <i class="fas fa-user-shield"></i> Admin
                                                 </span>
                                             @elseif($user->role === 'pwd')
-                                                <span class="badge badge-success">
+                                                <span class="badge bg-success text-white">
                                                     <i class="fas fa-wheelchair"></i> PWD
                                                 </span>
+                                            @elseif($user->role === 'employer')
+                                                <span class="badge bg-info text-white">
+                                                    <i class="fas fa-building"></i> Employer
+                                                </span>
                                             @else
-                                                <span class="badge badge-info">
+                                                <span class="badge bg-secondary text-white">
                                                     <i class="fas fa-user"></i> User
                                                 </span>
                                             @endif
@@ -245,24 +249,24 @@
 
                                         <div class="mb-1">
                                             @if($user->is_active)
-                                                <span class="badge badge-success">
+                                                <span class="badge bg-success text-white">
                                                     <i class="fas fa-check"></i> Active
                                                 </span>
                                             @else
-                                                <span class="badge badge-secondary">
+                                                <span class="badge bg-secondary text-white">
                                                     <i class="fas fa-times"></i> Inactive
                                                 </span>
                                             @endif
                                         </div>
 
                                         @if($user->account_locked_until && $user->account_locked_until->isFuture())
-                                            <span class="badge badge-danger">
+                                            <span class="badge bg-danger text-white">
                                                 <i class="fas fa-lock"></i> Locked
                                             </span>
                                         @endif
 
                                         @if(!$user->email_verified_at)
-                                            <span class="badge badge-warning mt-1">
+                                            <span class="badge bg-warning text-dark mt-1">
                                                 <i class="fas fa-envelope"></i> Unverified
                                             </span>
                                         @endif
@@ -270,23 +274,23 @@
                                     <td>
                                         <div class="security-indicators">
                                             @if($user->password_meets_current_standards)
-                                                <span class="badge badge-success mb-1">
+                                                <span class="badge bg-success text-white mb-1">
                                                     <i class="fas fa-shield-alt"></i> Strong Password
                                                 </span>
                                             @else
-                                                <span class="badge badge-warning mb-1">
+                                                <span class="badge bg-warning text-dark mb-1">
                                                     <i class="fas fa-shield-alt"></i> Weak Password
                                                 </span>
                                             @endif
 
                                             @if($user->two_factor_secret)
-                                                <span class="badge badge-info mb-1">
+                                                <span class="badge bg-info text-white mb-1">
                                                     <i class="fas fa-mobile-alt"></i> 2FA Enabled
                                                 </span>
                                             @endif
 
                                             @if($user->failed_login_attempts >= 3)
-                                                <span class="badge badge-danger">
+                                                <span class="badge bg-danger text-white">
                                                     <i class="fas fa-exclamation-triangle"></i> Failed Logins
                                                 </span>
                                             @endif
@@ -353,6 +357,20 @@
                                                     </button>
                                                 </form>
                                             @endif
+
+                                            <!-- Delete Button -->
+                                            @if($user->id !== auth()->id())
+                                                <form action="{{ route('admin.users.destroy', $user->id) }}"
+                                                      method="POST" class="d-inline mb-1"
+                                                      onsubmit="return confirm('⚠️ WARNING: This will permanently delete this user account and all associated data!\n\nUser: {{ $user->name }}\nEmail: {{ $user->email }}\n\nThis action CANNOT be undone. Are you absolutely sure?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger btn-sm w-100"
+                                                            title="Delete User Permanently">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -362,12 +380,12 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="d-flex justify-content-between align-items-center mt-4">
-                    <div class="text-muted">
-                        Showing {{ $users->firstItem() }} to {{ $users->lastItem() }} of {{ $users->total() }} entries
+                <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap">
+                    <div class="text-muted mb-2">
+                        Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} entries
                     </div>
-                    <div>
-                        {{ $users->links() }}
+                    <div class="mb-2">
+                        {{ $users->appends(request()->query())->links('pagination::bootstrap-5') }}
                     </div>
                 </div>
             @else
@@ -390,21 +408,27 @@
 @endsection
 
 @section('scripts')
-<script>
-    // Auto-submit form when filters change
-    document.addEventListener('DOMContentLoaded', function() {
-        const filters = ['role', 'activity', 'security'];
-        filters.forEach(filter => {
-            const element = document.getElementById(filter);
-            if (element) {
-                element.addEventListener('change', function() {
-                    this.form.submit();
-                });
-            }
-        });
+    @parent
 
-        // Remove DataTables initialization since we're using Laravel pagination
-        // DataTables conflicts with server-side Laravel pagination
-    });
-</script>
+    <script>
+        // Auto-submit form when filters change
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('>>> Users page scripts loading...');
+            
+            const filters = ['role', 'activity', 'security'];
+            filters.forEach(filter => {
+                const element = document.getElementById(filter);
+                if (element) {
+                    element.addEventListener('change', function() {
+                        this.form.submit();
+                    });
+                }
+            });
+
+            // Remove DataTables initialization since we're using Laravel pagination
+            // DataTables conflicts with server-side Laravel pagination
+            
+            console.log('>>> Users page scripts loaded!');
+        });
+    </script>
 @endsection

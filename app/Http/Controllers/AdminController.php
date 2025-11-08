@@ -109,6 +109,36 @@ class AdminController extends Controller
         return view('admin.users.index', compact('users', 'roles'));
     }
 
+    public function createUser()
+    {
+        auth()->user()->recordAdminAction();
+
+        return view('admin.users.create');
+    }
+
+    public function storeUser(Request $request)
+    {
+        auth()->user()->recordAdminAction();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|in:pwd,employer,admin',
+            'phone' => 'nullable|string|max:20',
+            'is_active' => 'boolean',
+        ]);
+
+        $validated['password'] = bcrypt($validated['password']);
+        $validated['is_active'] = $request->has('is_active') ? true : false;
+        $validated['email_verified_at'] = now(); // Auto-verify admin-created accounts
+
+        $user = User::create($validated);
+
+        return redirect()->route('admin.users.show', $user->id)
+            ->with('success', "User account '{$user->name}' has been created successfully.");
+    }
+
     public function userShow(User $user)
     {
         auth()->user()->recordAdminAction();
@@ -161,31 +191,169 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'User role updated successfully.');
     }
 
+    public function deleteUser(User $user)
+    {
+        auth()->user()->recordAdminAction();
+
+        // Prevent admin from deleting themselves
+        if ($user->id === auth()->id()) {
+            return redirect()->back()->with('error', 'You cannot delete your own account.');
+        }
+
+        // Prevent deleting the last admin
+        if ($user->role === 'admin') {
+            $adminCount = User::where('role', 'admin')->count();
+            if ($adminCount <= 1) {
+                return redirect()->back()->with('error', 'Cannot delete the last administrator account.');
+            }
+        }
+
+        $userName = $user->name;
+        $userEmail = $user->email;
+
+        try {
+            // Delete related data first
+            $user->pwdProfile()->delete();
+            $user->jobApplications()->delete();
+            $user->trainingEnrollments()->delete();
+            $user->notifications()->delete();
+            
+            // Delete the user
+            $user->delete();
+
+            return redirect()->route('admin.users.index')
+                ->with('success', "User account '{$userName}' ({$userEmail}) has been permanently deleted.");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete user account: ' . $e->getMessage());
+        }
+    }
+
     public function userSecurityReport()
     {
         auth()->user()->recordAdminAction();
 
+        // Comprehensive security statistics
+        $totalUsers = User::count();
+        $pwdUsers = User::where('role', 'pwd')->count();
+        $employerUsers = User::where('role', 'employer')->count();
+        $adminUsers = User::where('role', 'admin')->count();
+
         $securityStats = [
-            'total_users' => User::count(),
+            'total_users' => $totalUsers,
+            'pwd_users' => $pwdUsers,
+            'employer_users' => $employerUsers,
+            'admin_users' => $adminUsers,
             'users_with_strong_passwords' => User::where('password_meets_current_standards', true)->count(),
             'users_with_2fa' => User::whereNotNull('two_factor_secret')->count(),
-            'locked_accounts' => User::locked()->count(),
-            'expired_passwords' => User::withExpiredPassword()->count(),
-            'high_risk_users' => User::needsSecurityAttention()->count(),
+            'locked_accounts' => User::whereNotNull('account_locked_until')
+                                    ->where('account_locked_until', '>', now())
+                                    ->count(),
+            'expired_passwords' => User::where(function($q) {
+                $q->whereNull('last_password_changed_at')
+                  ->orWhere('last_password_changed_at', '<', now()->subDays(90));
+            })->count(),
+            'high_risk_users' => User::where(function($q) {
+                $q->where('password_meets_current_standards', false)
+                  ->orWhere('failed_login_attempts', '>=', 3)
+                  ->orWhereNotNull('account_locked_until');
+            })->count(),
+            'active_users' => User::where('is_active', true)->count(),
+            'inactive_users' => User::where('is_active', false)->count(),
+            'recent_logins_24h' => User::where('last_login_at', '>=', now()->subHours(24))->count(),
+            'recent_logins_7d' => User::where('last_login_at', '>=', now()->subDays(7))->count(),
+            'never_logged_in' => User::whereNull('last_login_at')->count(),
         ];
 
-        $riskUsers = User::needsSecurityAttention()
+        // High-risk users with detailed information
+        $riskUsers = User::where(function($query) {
+                $query->where('password_meets_current_standards', false)
+                      ->orWhere('failed_login_attempts', '>=', 3)
+                      ->orWhereNotNull('account_locked_until')
+                      ->orWhere(function($q) {
+                          $q->whereNull('last_password_changed_at')
+                            ->orWhere('last_password_changed_at', '<', now()->subDays(90));
+                      });
+            })
             ->with('pwdProfile')
+            ->orderBy('failed_login_attempts', 'desc')
+            ->orderBy('last_login_at', 'asc')
             ->get()
             ->map(function ($user) {
-                return [
-                    'user' => $user,
-                    'security_score' => $user->security_score,
-                    'recommendations' => $user->getSecurityRecommendations(),
-                ];
+                $score = 100;
+                $issues = [];
+
+                // Calculate security score
+                if (!$user->password_meets_current_standards) {
+                    $score -= 30;
+                    $issues[] = 'weak_password';
+                }
+                if (!$user->two_factor_secret) {
+                    $score -= 20;
+                    $issues[] = 'no_2fa';
+                }
+                if ($user->failed_login_attempts >= 3) {
+                    $score -= 25;
+                    $issues[] = 'failed_logins';
+                }
+                if ($user->account_locked_until && \Carbon\Carbon::parse($user->account_locked_until)->isFuture()) {
+                    $score -= 20;
+                    $issues[] = 'locked';
+                }
+                if ($user->last_password_changed_at && $user->last_password_changed_at->lt(now()->subDays(90))) {
+                    $score -= 15;
+                    $issues[] = 'expired_password';
+                }
+                if (!$user->last_login_at) {
+                    $score -= 10;
+                    $issues[] = 'never_logged_in';
+                }
+
+                // Add the calculated fields to the user object
+                $user->security_score = max(0, $score);
+                $user->security_issues = $issues;
+
+                return $user;
             });
 
-        return view('admin.users.security-report', compact('securityStats', 'riskUsers'));
+        // Login activity data for chart
+        $loginActivity = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $count = User::whereDate('last_login_at', $date->format('Y-m-d'))->count();
+            $loginActivity[] = [
+                'date' => $date->format('M d'),
+                'count' => $count
+            ];
+        }
+
+        // Role-based security breakdown
+        $roleSecurityBreakdown = [
+            'pwd' => [
+                'total' => $pwdUsers,
+                'strong_passwords' => User::where('role', 'pwd')->where('password_meets_current_standards', true)->count(),
+                'with_2fa' => User::where('role', 'pwd')->whereNotNull('two_factor_secret')->count(),
+                'at_risk' => User::where('role', 'pwd')->where('password_meets_current_standards', false)->count(),
+            ],
+            'employer' => [
+                'total' => $employerUsers,
+                'strong_passwords' => User::where('role', 'employer')->where('password_meets_current_standards', true)->count(),
+                'with_2fa' => User::where('role', 'employer')->whereNotNull('two_factor_secret')->count(),
+                'at_risk' => User::where('role', 'employer')->where('password_meets_current_standards', false)->count(),
+            ],
+            'admin' => [
+                'total' => $adminUsers,
+                'strong_passwords' => User::where('role', 'admin')->where('password_meets_current_standards', true)->count(),
+                'with_2fa' => User::where('role', 'admin')->whereNotNull('two_factor_secret')->count(),
+                'at_risk' => User::where('role', 'admin')->where('password_meets_current_standards', false)->count(),
+            ],
+        ];
+
+        return view('admin.users.security-report', compact(
+            'securityStats',
+            'riskUsers',
+            'loginActivity',
+            'roleSecurityBreakdown'
+        ));
     }
 
     public function systemStatistics()

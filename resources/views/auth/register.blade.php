@@ -8,8 +8,8 @@
     </a>
 
     <div class="row g-0 min-vh-100">
-        <!-- Left Side - Security Information (NOW WITH SAME BLUE COLOR AS LOGIN) -->
-        <div class="col-lg-6 d-none d-lg-flex bg-primary text-white align-items-center justify-content-center p-5">
+        <!-- Left Side - Security Information -->
+        <div class="col-lg-6 d-none d-lg-flex text-white align-items-center justify-content-center p-5" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
             <div class="text-center" style="max-width: 500px;">
                 <div class="security-features">
                     <h1 class="display-5 fw-bold mb-4" aria-label="Secure PWD Registration">
@@ -161,8 +161,8 @@
                                 <!-- Name Input -->
                                 <div class="mb-3">
                                     <label for="name" class="form-label fw-semibold text-dark">
-                                        <i class="fas fa-user me-2 text-primary"></i>
-                                        Full Legal Name
+                                        <i class="fas fa-user me-2 text-success"></i>
+                                        Full Name
                                         <span class="text-danger">*</span>
                                     </label>
                                     <input
@@ -191,7 +191,7 @@
                                 <!-- Email Input -->
                                 <div class="mb-3">
                                     <label for="email" class="form-label fw-semibold text-dark">
-                                        <i class="fas fa-envelope me-2 text-primary"></i>
+                                        <i class="fas fa-envelope me-2 text-success"></i>
                                         Email Address
                                         <span class="text-danger">*</span>
                                     </label>
@@ -220,8 +220,8 @@
                                 <!-- Phone Input -->
                                 <div class="mb-3">
                                     <label for="phone" class="form-label fw-semibold text-dark">
-                                        <i class="fas fa-mobile-alt me-2 text-primary"></i>
-                                        Mobile Number
+                                        <i class="fas fa-phone me-2 text-success"></i>
+                                        Phone Number
                                         <span class="text-danger">*</span>
                                     </label>
                                     <input
@@ -249,7 +249,7 @@
                                 <!-- Address Input -->
                                 <div class="mb-3">
                                     <label for="address" class="form-label fw-semibold text-dark">
-                                        <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                        <i class="fas fa-map-marker-alt me-2 text-success"></i>
                                         Complete Address
                                         <span class="text-danger">*</span>
                                     </label>
@@ -277,13 +277,13 @@
                             <!-- Security Section -->
                             <div class="security-section mt-4">
                                 <h5 class="border-bottom pb-2 mb-3 text-dark">
-                                    <i class="fas fa-lock me-2 text-primary"></i>Security Settings
+                                    <i class="fas fa-lock me-2 text-success"></i>Security Settings
                                 </h5>
 
                                 <!-- Password Input -->
                                 <div class="mb-3">
                                     <label for="password" class="form-label fw-semibold text-dark">
-                                        <i class="fas fa-key me-2 text-primary"></i>
+                                        <i class="fas fa-key me-2 text-success"></i>
                                         Secure Password
                                         <span class="text-danger">*</span>
                                     </label>
@@ -425,9 +425,10 @@
                             <div class="d-grid mb-4">
                                 <button
                                     type="submit"
-                                    class="btn btn-primary btn-lg fw-semibold py-3 security-submit"
+                                    class="btn btn-success btn-lg fw-semibold py-3 security-submit"
                                     id="register-button"
                                     disabled
+                                    style="border-radius: 50px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;"
                                 >
                                     <i class="fas fa-user-shield me-2"></i>
                                     Create Secure Account
@@ -452,9 +453,9 @@
                 </div>
 
                 <!-- Security Footer -->
-                <div class="mt-4 p-3 bg-primary text-white rounded text-center">
+                <div class="mt-4 p-3 text-white rounded text-center" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                     <h6 class="mb-2">
-                        <i class="fas fa-shield-alt me-2 text-warning"></i>Maximum Security
+                        <i class="fas fa-shield-alt me-2"></i>Maximum Security
                     </h6>
                     <p class="small mb-0">
                         Protected by end-to-end encryption • Compliant with Data Privacy Act • Regular security audits
@@ -757,8 +758,8 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .security-input:focus {
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    border-color: #10b981;
+    box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.15);
 }
 
 .security-input.is-invalid {
@@ -817,8 +818,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-/* Make sure the primary background matches your login form */
-.bg-primary-dark {
+/* Green theme background */
+.bg-success-dark {
     background-color: rgba(0, 0, 0, 0.2) !important;
 }
 </style>

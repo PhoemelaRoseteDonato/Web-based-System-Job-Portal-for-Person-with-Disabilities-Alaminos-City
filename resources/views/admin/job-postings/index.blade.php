@@ -175,7 +175,7 @@
                                     <td>{{ $job->company }}</td>
                                     <td>{{ $job->location }}</td>
                                     <td>
-                                        <span class="badge badge-info">{{ $job->employment_type }}</span>
+                                        <span class="badge bg-info text-white">{{ $job->employment_type }}</span>
                                     </td>
                                     <td>
                                         @if($job->application_deadline)
@@ -192,19 +192,19 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge badge-primary">
+                                        <span class="badge bg-primary text-white">
                                             {{ $job->applications->count() }} applications
                                         </span>
                                     </td>
                                     <td>
                                         @if($job->is_active)
-                                            <span class="badge badge-success">Active</span>
+                                            <span class="badge bg-success text-white">Active</span>
                                         @else
-                                            <span class="badge badge-secondary">Inactive</span>
+                                            <span class="badge bg-secondary text-white">Inactive</span>
                                         @endif
 
                                         @if($job->application_deadline && $job->application_deadline->isPast())
-                                            <span class="badge badge-warning mt-1">Expired</span>
+                                            <span class="badge bg-warning text-dark mt-1">Expired</span>
                                         @endif
                                     </td>
                                     <td>
@@ -250,8 +250,13 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="d-flex justify-content-center mt-4">
-                    {{ $jobPostings->links() }}
+                <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap">
+                    <div class="text-muted mb-2">
+                        Showing {{ $jobPostings->firstItem() ?? 0 }} to {{ $jobPostings->lastItem() ?? 0 }} of {{ $jobPostings->total() }} entries
+                    </div>
+                    <div class="mb-2">
+                        {{ $jobPostings->appends(request()->query())->links('pagination::bootstrap-5') }}
+                    </div>
                 </div>
             @else
                 <div class="text-center py-5">
@@ -269,21 +274,23 @@
 @endsection
 
 @section('scripts')
-<script>
-    // Auto-submit form when status changes
-    document.getElementById('status').addEventListener('change', function() {
-        this.form.submit();
-    });
+    @parent
 
-    // DataTable initialization (if you have DataTables)
-    $(document).ready(function() {
-        $('#dataTable').DataTable({
-            "pageLength": 25,
-            "ordering": true,
-            "info": false,
-            "searching": false,
-            "lengthChange": false
+    <script>
+        // Auto-submit form when status changes
+        document.getElementById('status').addEventListener('change', function() {
+            this.form.submit();
         });
-    });
-</script>
+
+        // DataTable initialization (if you have DataTables)
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                "pageLength": 25,
+                "ordering": true,
+                "info": false,
+                "searching": false,
+                "lengthChange": false
+            });
+        });
+    </script>
 @endsection

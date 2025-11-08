@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\JobPosting;
 use App\Models\JobApplication;
@@ -106,16 +107,36 @@ class EmployerController extends Controller
         ]);
 
         try {
+            $file = $request->file('resume');
+
             // Delete old resume if exists
             if ($user->resume) {
                 Storage::disk('public')->delete($user->resume);
+
+                // Also delete old resume document entry if exists
+                \App\Models\Document::where('user_id', $user->id)
+                    ->where('type', 'resume')
+                    ->where('file_path', $user->resume)
+                    ->delete();
             }
 
             // Store new resume
-            $path = $request->file('resume')->store('resumes', 'public');
+            $path = $file->store('resumes', 'public');
             $user->update(['resume' => $path]);
 
-            return back()->with('success', 'Resume uploaded successfully!');
+            // Create document entry for tracking in Documents section
+            \App\Models\Document::create([
+                'user_id' => $user->id,
+                'type' => 'resume',
+                'name' => 'Company Profile - ' . $file->getClientOriginalName(),
+                'file_path' => $path,
+                'mime_type' => $file->getClientMimeType(),
+                'size' => $file->getSize(),
+                'description' => 'Company profile/resume uploaded from employer profile',
+                'is_verified' => false,
+            ]);
+
+            return back()->with('success', 'Resume uploaded successfully! You can view it in your Documents section.');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to upload resume. Please try again.');
@@ -336,7 +357,7 @@ class EmployerController extends Controller
     private function getApplicationByCategoryData($user): array
     {
         return $user->jobPostings()
-            ->select('category', \DB::raw('count(*) as total_applications'))
+            ->select('category', DB::raw('count(*) as total_applications'))
             ->join('job_applications', 'job_postings.id', '=', 'job_applications.job_posting_id')
             ->groupBy('category')
             ->orderBy('total_applications', 'desc')

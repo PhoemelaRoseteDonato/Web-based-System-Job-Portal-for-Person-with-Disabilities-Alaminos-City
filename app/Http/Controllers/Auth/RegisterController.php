@@ -37,8 +37,19 @@ class RegisterController extends Controller
             'name' => [
                 'required',
                 'string',
+                'min:2',
                 'max:255',
-                'regex:/^[\pL\s\-\.]+$/u' // Only letters, spaces, hyphens, and dots
+                'regex:/^[\pL\s\-\.]+$/u', // Only letters, spaces, hyphens, and dots
+                function ($attribute, $value, $fail) {
+                    // Check for suspicious patterns (repeated characters)
+                    if (preg_match('/(.)\1{4,}/', $value)) {
+                        $fail('Please enter a valid name without repeated characters.');
+                    }
+                    // Check for single character names
+                    if (str_word_count($value) === 1 && strlen($value) < 3) {
+                        $fail('Please enter your full name.');
+                    }
+                }
             ],
             'email' => [
                 'required',
@@ -47,24 +58,50 @@ class RegisterController extends Controller
                 'max:255',
                 'unique:users',
                 function ($attribute, $value, $fail) {
-                    // Check for disposable emails
+                    // Expanded list of disposable email providers
                     $disposableDomains = [
                         'tempmail.com', 'guerrillamail.com', 'mailinator.com',
-                        '10minutemail.com', 'throwawaymail.com', 'yopmail.com'
+                        '10minutemail.com', 'throwawaymail.com', 'yopmail.com',
+                        'temp-mail.org', 'getairmail.com', 'fakeinbox.com',
+                        'trashmail.com', 'getnada.com', 'maildrop.cc',
+                        'sharklasers.com', 'guerrillamailblock.com', 'spam4.me',
+                        'mintemail.com', 'mytrashmail.com', 'emailondeck.com'
                     ];
 
                     $domain = explode('@', $value)[1] ?? '';
                     if (in_array(strtolower($domain), $disposableDomains)) {
-                        $fail('Disposable email addresses are not allowed.');
+                        $fail('Disposable email addresses are not allowed for security reasons.');
+                    }
+                    
+                    // Check for suspicious email patterns
+                    $localPart = explode('@', $value)[0] ?? '';
+                    if (preg_match('/^(test|admin|spam|fake|dummy|trash)/i', $localPart)) {
+                        $fail('Please use a valid personal or business email address.');
                     }
                 }
             ],
             'password' => [
                 'required',
                 'string',
-                'min:12', // Increased minimum length
+                'min:12', // Increased minimum length for better security
+                'max:128', // Prevent extremely long passwords
                 'confirmed',
                 new StrongPassword,
+                function ($attribute, $value, $fail) {
+                    // Check for common weak passwords
+                    $commonPasswords = [
+                        'password123', '123456789012', 'qwerty123456',
+                        'admin123456', 'welcome12345', 'Password@123'
+                    ];
+                    if (in_array(strtolower($value), array_map('strtolower', $commonPasswords))) {
+                        $fail('This password is too common. Please choose a more unique password.');
+                    }
+                    
+                    // Check for sequential characters
+                    if (preg_match('/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789)/i', $value)) {
+                        $fail('Password should not contain sequential characters.');
+                    }
+                }
             ],
             'phone' => [
                 'required',
@@ -72,12 +109,26 @@ class RegisterController extends Controller
                 'max:20',
                 new PhoneNumber,
                 new UniquePhone,
+                function ($attribute, $value, $fail) {
+                    // Additional validation for phone numbers
+                    $cleaned = preg_replace('/[^0-9+]/', '', $value);
+                    if (preg_match('/(\d)\1{5,}/', $cleaned)) {
+                        $fail('Please enter a valid phone number.');
+                    }
+                }
             ],
             'address' => [
                 'required',
                 'string',
+                'min:10',
                 'max:500',
-                'regex:/^[a-zA-Z0-9\s\-\.,#]+$/'
+                'regex:/^[a-zA-Z0-9\s\-\.,#]+$/',
+                function ($attribute, $value, $fail) {
+                    // Check for meaningful address (not just random characters)
+                    if (str_word_count($value) < 3) {
+                        $fail('Please provide a complete address.');
+                    }
+                }
             ],
             'user_type' => [
                 'required',
@@ -99,12 +150,26 @@ class RegisterController extends Controller
         }
 
         $messages = [
+            'name.required' => 'Full name is required.',
+            'name.min' => 'Name must be at least 2 characters.',
             'name.regex' => 'Name can only contain letters, spaces, hyphens, and dots.',
+            'email.required' => 'Email address is required.',
             'email.email' => 'Please provide a valid email address.',
-            'password.min' => 'Password must be at least 12 characters long.',
+            'email.unique' => 'This email is already registered. Please login or use a different email.',
+            'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 12 characters long for security.',
+            'password.max' => 'Password is too long. Maximum 128 characters allowed.',
+            'password.confirmed' => 'Password confirmation does not match.',
+            'phone.required' => 'Phone number is required.',
+            'address.required' => 'Address is required.',
+            'address.min' => 'Please provide a complete address (minimum 10 characters).',
             'address.regex' => 'Address contains invalid characters.',
-            'terms.required' => 'You must accept the Terms of Service.',
-            'privacy_policy.required' => 'You must accept the Privacy Policy.',
+            'user_type.required' => 'Please select an account type.',
+            'user_type.in' => 'Invalid account type selected.',
+            'terms.required' => 'You must accept the Terms of Service to register.',
+            'terms.accepted' => 'You must accept the Terms of Service to register.',
+            'privacy_policy.required' => 'You must accept the Privacy Policy to register.',
+            'privacy_policy.accepted' => 'You must accept the Privacy Policy to register.',
             'g-recaptcha-response.required' => 'Please complete the reCAPTCHA verification.',
         ];
 

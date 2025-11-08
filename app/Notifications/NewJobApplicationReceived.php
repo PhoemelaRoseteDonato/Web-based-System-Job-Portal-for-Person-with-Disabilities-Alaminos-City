@@ -38,7 +38,7 @@ class NewJobApplicationReceived extends Notification
                     ->line("**Position:** {$job->title}")
                     ->line("**Company:** {$job->company}")
                     ->line("**Applied On:** {$this->application->created_at->format('M j, Y g:i A')}")
-                    ->action('Review Application', route('applications.admin-index'))
+                    ->action('Review Application', route('admin.applications.index'))
                     ->line('Please review the application at your earliest convenience.');
     }
 
@@ -54,7 +54,7 @@ class NewJobApplicationReceived extends Notification
             'job_title' => $job->title,
             'company' => $job->company,
             'message' => "New application from {$user->name} for {$job->title}",
-            'url' => route('applications.admin-index'),
+            'url' => route('admin.applications.index'),
         ];
     }
 }

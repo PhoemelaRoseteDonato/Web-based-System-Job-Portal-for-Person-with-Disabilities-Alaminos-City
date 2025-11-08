@@ -172,10 +172,10 @@
 
                         <div class="col-md-4">
                             <!-- Enrollment Box -->
-                            <div class="card sticky-top" style="top: 20px;">
-                                <div class="card-header bg-success text-white">
+                            <div class="card sticky-top shadow-sm border-0" style="top: 20px;">
+                                <div class="card-header bg-primary text-white">
                                     <h5 class="mb-0">
-                                        <i class="fas fa-user-plus"></i>
+                                        <i class="fas fa-user-plus me-2"></i>
                                         Enroll in this Training
                                     </h5>
                                 </div>
@@ -242,10 +242,9 @@
                                                         @csrf
                                                         <input type="hidden" name="skill_training_id" value="{{ $skillTraining->id }}">
 
-                                                        <div class="alert alert-info">
-                                                            <i class="fas fa-info-circle"></i>
-                                                            <strong>Enrollment Information</strong>
-                                                            <ul class="mb-0 mt-2 ps-3">
+                                                        <div class="alert alert-light border">
+                                                            <strong class="d-block mb-2">Enrollment Information</strong>
+                                                            <ul class="mb-0 small">
                                                                 <li>Training: <strong>{{ $skillTraining->title }}</strong></li>
                                                                 <li>Date: {{ $skillTraining->start_date->format('M d, Y') }} - {{ $skillTraining->end_date->format('M d, Y') }}</li>
                                                                 <li>Location: {{ $skillTraining->location }}</li>
@@ -254,8 +253,8 @@
                                                         </div>
 
                                                         <div class="mb-3">
-                                                            <label for="notes" class="form-label">
-                                                                <strong>Additional Notes (Optional)</strong>
+                                                            <label for="notes" class="form-label fw-semibold">
+                                                                Additional Notes (Optional)
                                                             </label>
                                                             <textarea class="form-control" id="notes" name="notes"
                                                                       rows="3" placeholder="Any special requirements, accessibility needs, or questions...">{{ old('notes') }}</textarea>
@@ -265,7 +264,7 @@
                                                         </div>
 
                                                         <div class="d-grid">
-                                                            <button type="submit" class="btn btn-success btn-lg"
+                                                            <button type="submit" class="btn btn-primary"
                                                                     onclick="return confirm('Confirm enrollment in {{ $skillTraining->title }}?')">
                                                                 <i class="fas fa-user-plus me-2"></i> Confirm Enrollment
                                                             </button>
@@ -310,10 +309,10 @@
                             </div>
 
                             <!-- Quick Actions -->
-                            <div class="card mt-3">
-                                <div class="card-header bg-info text-white">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-bolt"></i>
+                            <div class="card mt-3 shadow-sm border-0">
+                                <div class="card-header bg-white border-bottom">
+                                    <h5 class="mb-0 text-dark">
+                                        <i class="fas fa-bolt me-2"></i>
                                         Quick Actions
                                     </h5>
                                 </div>
@@ -336,10 +335,10 @@
                             </div>
 
                             <!-- Training Information -->
-                            <div class="card mt-3">
-                                <div class="card-header bg-secondary text-white">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-info-circle"></i>
+                            <div class="card mt-3 shadow-sm border-0">
+                                <div class="card-header bg-white border-bottom">
+                                    <h5 class="mb-0 text-dark">
+                                        <i class="fas fa-info-circle me-2"></i>
                                         Training Information
                                     </h5>
                                 </div>
@@ -369,10 +368,10 @@
                             </div>
 
                             <!-- Contact Information -->
-                            <div class="card mt-3">
-                                <div class="card-header bg-warning text-dark">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-headset"></i>
+                            <div class="card mt-3 shadow-sm border-0">
+                                <div class="card-header bg-white border-bottom">
+                                    <h5 class="mb-0 text-dark">
+                                        <i class="fas fa-headset me-2"></i>
                                         Need Help?
                                     </h5>
                                 </div>

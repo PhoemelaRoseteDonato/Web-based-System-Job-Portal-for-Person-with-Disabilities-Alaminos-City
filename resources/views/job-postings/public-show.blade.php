@@ -1,608 +1,171 @@
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Models\JobPosting;
-use App\Models\DisabilityType;
-use App\Models\JobApplication;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Schema;
-
-class JobPostingController extends Controller
-{
-    /**
-     * Display a listing of job postings (Admin view)
-     */
-    public function index(Request $request)
-    {
-        // Authorization check
-        if (!Gate::allows('view-admin-panel')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $query = JobPosting::with(['creator', 'applications']);
-
-        // Search filter
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'like', '%' . $search . '%')
-                  ->orWhere('company', 'like', '%' . $search . '%')
-                  ->orWhere('location', 'like', '%' . $search . '%');
-            });
-        }
-
-        // Status filter
-        if ($request->has('status') && $request->status) {
-            if ($request->status === 'active') {
-                $query->where('is_active', true);
-            } elseif ($request->status === 'inactive') {
-                $query->where('is_active', false);
-            } elseif ($request->status === 'expired') {
-                $query->where('application_deadline', '<', now());
-            }
-        }
-
-        $jobPostings = $query->latest()->paginate(15);
-
-        return view('admin.job-postings.index', compact('jobPostings'));
-    }
-
-    /**
-     * Display a listing of job postings for public view with simplified filtration
-     */
-    public function publicIndex(Request $request)
-    {
-        $query = JobPosting::with(['suitableDisabilityTypes'])
-            ->where('is_active', true)
-            ->where(function($query) {
-                $query->where('application_deadline', '>=', now())
-                      ->orWhereNull('application_deadline');
-            });
-
-        // ========== SIMPLIFIED FILTERS ==========
-        $filters = $request->validate([
-            'q' => 'nullable|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'employment_type' => 'nullable|array',
-            'employment_type.*' => 'nullable|string|max:255',
-            'disability_type_ids' => 'nullable|array',
-            'disability_type_ids.*' => 'integer|exists:disability_types,id',
-            'sort_by' => 'nullable|string|in:newest,deadline',
-        ]);
-
-        // ========== SEARCH FILTER ==========
-        if (!empty($filters['q'])) {
-            $search = $filters['q'];
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'like', '%' . $search . '%')
-                  ->orWhere('company', 'like', '%' . $search . '%')
-                  ->orWhere('location', 'like', '%' . $search . '%')
-                  ->orWhere('description', 'like', '%' . $search . '%');
-            });
-        }
-
-        // ========== LOCATION FILTER ==========
-        if (!empty($filters['location'])) {
-            $query->where('location', 'like', '%' . $filters['location'] . '%');
-        }
-
-        // ========== EMPLOYMENT TYPE FILTER ==========
-        if (!empty($filters['employment_type'])) {
-            $query->whereIn('employment_type', $filters['employment_type']);
-        }
-
-        // ========== FILTER BY SUITABLE DISABILITY TYPES ==========
-        if (!empty($filters['disability_type_ids'])) {
-            $query->whereHas('suitableDisabilityTypes', function($q) use ($filters) {
-                $q->whereIn('disability_types.id', $filters['disability_type_ids']);
-            });
-        }
-
-        // ========== SIMPLIFIED SORTING ==========
-        switch ($filters['sort_by'] ?? 'newest') {
-            case 'deadline':
-                $query->orderByRaw('application_deadline IS NULL')
-                      ->orderBy('application_deadline', 'asc')
-                      ->orderBy('created_at', 'desc');
-                break;
-            case 'newest':
-            default:
-                $query->orderBy('created_at', 'desc');
-                break;
-        }
-
-        // Get paginated results
-        $jobPostings = $query->paginate(12)->withQueryString();
-
-        $disabilityTypes = \App\Models\DisabilityType::orderBy('type')->get();
-
-        // If request is AJAX, return only the job list partial (HTML fragment)
-        if ($request->ajax()) {
-            return view('job-postings.partials.list', compact('jobPostings'));
-        }
-
-        return view('job-postings.public-index', compact('jobPostings', 'disabilityTypes', 'filters'));
-    }
-
-    /**
-     * Show the form for creating a new job posting
-     */
-    public function create()
-    {
-        if (!Gate::allows('create-job-postings')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $employmentTypes = [
-            'Full-time' => 'Full-time',
-            'Part-time' => 'Part-time',
-            'Contract' => 'Contract',
-            'Temporary' => 'Temporary',
-            'Internship' => 'Internship',
-            'Freelance' => 'Freelance'
-        ];
-
-        $experienceLevels = [
-            'Entry Level' => 'Entry Level',
-            'Mid Level' => 'Mid Level',
-            'Senior Level' => 'Senior Level',
-            'Executive' => 'Executive',
-            'Not Specified' => 'Not Specified'
-        ];
-
-        $jobCategories = [
-            'IT & Software' => 'IT & Software',
-            'Healthcare' => 'Healthcare',
-            'Education' => 'Education',
-            'Sales & Marketing' => 'Sales & Marketing',
-            'Administrative' => 'Administrative',
-            'Customer Service' => 'Customer Service',
-            'Manufacturing' => 'Manufacturing',
-            'Retail' => 'Retail',
-            'Hospitality' => 'Hospitality',
-            'General' => 'General'
-        ];
-
-        $disabilityTypes = DisabilityType::orderBy('type')->get();
-
-        return view('admin.job-postings.create', compact('employmentTypes', 'experienceLevels', 'jobCategories', 'disabilityTypes'));
-    }
-
-    /**
-     * Store a newly created job posting
-     */
-    public function store(Request $request)
-    {
-        if (!Gate::allows('create-job-postings')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $validated = $this->validateJobPosting($request);
-
-        // Convert empty deadline to null
-        if (empty($validated['application_deadline'])) {
-            $validated['application_deadline'] = null;
-        }
-
-        $validated['created_by'] = auth()->id();
-        $validated['is_active'] = $request->has('is_active');
-
-        // Set default values if not provided
-        $validated['views'] = 0;
-        $validated['job_category'] = $validated['job_category'] ?? 'General';
-        $validated['experience_level'] = $validated['experience_level'] ?? 'Not Specified';
-
-        $job = JobPosting::create($validated);
-
-        // Sync suitable disability types pivot table
-        $job->suitableDisabilityTypes()->sync($request->input('disability_type_ids', []));
-
-        return redirect()->route('job-postings.index')
-            ->with('success', 'Job posting created successfully.');
-    }
-
-    /**
-     * Display the specified job posting (Admin view)
-     */
-    public function show(JobPosting $jobPosting)
-    {
-        if (!Gate::allows('view-job-posting', $jobPosting)) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $jobPosting->load(['creator', 'applications.user']);
-
-        $applicationsByStatus = $jobPosting->applications()
-            ->select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->pluck('count', 'status');
-
-        return view('admin.job-postings.show', compact('jobPosting', 'applicationsByStatus'));
-    }
-
-    /**
-     * Display the specified job posting for public view
-     */
-    public function publicShow(JobPosting $jobPosting)
-    {
-        // Check if job posting is active and deadline hasn't passed
-        if (!$jobPosting->is_active) {
-            abort(404, 'This job posting is no longer available.');
-        }
-
-        if ($jobPosting->application_deadline && $jobPosting->application_deadline->isPast()) {
-            abort(404, 'The application deadline for this job has passed.');
-        }
-
-        // Increment views count
-        $jobPosting->increment('views');
-
-        // Get related jobs
-        $relatedJobs = JobPosting::where('is_active', true)
-            ->where('id', '!=', $jobPosting->id)
-            ->where(function($query) use ($jobPosting) {
-                $query->where('company', $jobPosting->company)
-                      ->orWhere('employment_type', $jobPosting->employment_type)
-                      ->orWhere('location', 'like', '%' . $jobPosting->location . '%')
-                      ->orWhere('job_category', $jobPosting->job_category);
-            })
-            ->where(function($query) {
-                $query->where('application_deadline', '>=', now())
-                      ->orWhereNull('application_deadline');
-            })
-            ->limit(4)
-            ->get();
-
-        return view('job-postings.public-show', compact('jobPosting', 'relatedJobs'));
-    }
-
-    /**
-     * Show the form for editing the specified job posting
-     */
-    public function edit(JobPosting $jobPosting)
-    {
-        if (!Gate::allows('update-job-posting', $jobPosting)) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $employmentTypes = [
-            'Full-time' => 'Full-time',
-            'Part-time' => 'Part-time',
-            'Contract' => 'Contract',
-            'Temporary' => 'Temporary',
-            'Internship' => 'Internship',
-            'Freelance' => 'Freelance'
-        ];
-
-        $experienceLevels = [
-            'Entry Level' => 'Entry Level',
-            'Mid Level' => 'Mid Level',
-            'Senior Level' => 'Senior Level',
-            'Executive' => 'Executive',
-            'Not Specified' => 'Not Specified'
-        ];
-
-        $jobCategories = [
-            'IT & Software' => 'IT & Software',
-            'Healthcare' => 'Healthcare',
-            'Education' => 'Education',
-            'Sales & Marketing' => 'Sales & Marketing',
-            'Administrative' => 'Administrative',
-            'Customer Service' => 'Customer Service',
-            'Manufacturing' => 'Manufacturing',
-            'Retail' => 'Retail',
-            'Hospitality' => 'Hospitality',
-            'General' => 'General'
-        ];
-
-        $disabilityTypes = DisabilityType::orderBy('type')->get();
-
-        return view('admin.job-postings.edit', compact('jobPosting', 'employmentTypes', 'experienceLevels', 'jobCategories', 'disabilityTypes'));
-    }
-
-    /**
-     * Update the specified job posting
-     */
-    public function update(Request $request, JobPosting $jobPosting)
-    {
-        if (!Gate::allows('update-job-posting', $jobPosting)) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $validated = $this->validateJobPosting($request, $jobPosting);
-
-        // Convert empty deadline to null
-        if (empty($validated['application_deadline'])) {
-            $validated['application_deadline'] = null;
-        }
-
-        $validated['is_active'] = $request->has('is_active');
-
-        $jobPosting->update($validated);
-
-        // Sync disability types
-        $jobPosting->suitableDisabilityTypes()->sync($request->input('disability_type_ids', []));
-
-        return redirect()->route('job-postings.index')
-            ->with('success', 'Job posting updated successfully.');
-    }
-
-    /**
-     * Remove the specified job posting
-     */
-    public function destroy(JobPosting $jobPosting)
-    {
-        if (!Gate::allows('delete-job-posting', $jobPosting)) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        // Delete associated applications first
-        $jobPosting->applications()->delete();
-
-        $jobPosting->delete();
-
-        return redirect()->route('job-postings.index')
-            ->with('success', 'Job posting deleted successfully.');
-    }
-
-    /**
-     * Validate job posting data
-     */
-    private function validateJobPosting(Request $request, $jobPosting = null)
-    {
-        $rules = [
-            'title' => 'required|string|max:255',
-            'description' => 'required|string|min:50',
-            'requirements' => 'required|string|min:50',
-            'location' => 'required|string|max:255',
-            'company' => 'required|string|max:255',
-            'employment_type' => 'required|string|max:255',
-            'application_deadline' => 'nullable|date|after_or_equal:today',
-            'contact_email' => 'nullable|email|max:255',
-            'contact_phone' => 'nullable|string|max:20',
-            'job_category' => 'nullable|string|max:255',
-            'experience_level' => 'nullable|string|max:255',
-            'disability_type_ids' => 'nullable|array',
-            'disability_type_ids.*' => 'integer|exists:disability_types,id',
-        ];
-
-        return $request->validate($rules);
-    }
-
-    /**
-     * Toggle job posting active status
-     */
-    public function toggleStatus(JobPosting $jobPosting)
-    {
-        if (!Gate::allows('update-job-posting', $jobPosting)) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $jobPosting->update([
-            'is_active' => !$jobPosting->is_active
-        ]);
-
-        $status = $jobPosting->is_active ? 'activated' : 'deactivated';
-
-        return redirect()->back()->with('success', "Job posting {$status} successfully.");
-    }
-
-    /**
-     * Display job posting statistics
-     */
-    public function statistics()
-    {
-        if (!Gate::allows('view-admin-panel')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $totalJobs = JobPosting::count();
-        $activeJobs = JobPosting::where('is_active', true)->count();
-        $expiredJobs = JobPosting::where('application_deadline', '<', now())->count();
-        $totalApplications = JobApplication::count();
-
-        // Monthly job creation stats
-        $monthlyStats = JobPosting::select(
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('YEAR(created_at) as year'),
-            DB::raw('COUNT(*) as count')
-        )
-        ->where('created_at', '>=', now()->subYear())
-        ->groupBy('year', 'month')
-        ->orderBy('year', 'desc')
-        ->orderBy('month', 'desc')
-        ->get();
-
-        // Top companies by job count
-        $topCompanies = JobPosting::select('company', DB::raw('COUNT(*) as job_count'))
-            ->groupBy('company')
-            ->orderBy('job_count', 'desc')
-            ->limit(10)
-            ->get();
-
-        // Job categories distribution
-        $categoryDistribution = JobPosting::select('job_category', DB::raw('COUNT(*) as count'))
-            ->whereNotNull('job_category')
-            ->groupBy('job_category')
-            ->orderBy('count', 'desc')
-            ->get();
-
-        return view('admin.job-postings.statistics', compact(
-            'totalJobs',
-            'activeJobs',
-            'expiredJobs',
-            'totalApplications',
-            'monthlyStats',
-            'topCompanies',
-            'categoryDistribution'
-        ));
-    }
-
-    /**
-     * Bulk actions for job postings
-     */
-    public function bulkAction(Request $request)
-    {
-        if (!Gate::allows('view-admin-panel')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $action = $request->input('action');
-        $selectedIds = $request->input('selected_ids', []);
-
-        if (empty($selectedIds)) {
-            return redirect()->back()->with('error', 'No job postings selected.');
-        }
-
-        switch ($action) {
-            case 'activate':
-                JobPosting::whereIn('id', $selectedIds)->update(['is_active' => true]);
-                $message = 'Selected job postings activated successfully.';
-                break;
-
-            case 'deactivate':
-                JobPosting::whereIn('id', $selectedIds)->update(['is_active' => false]);
-                $message = 'Selected job postings deactivated successfully.';
-                break;
-
-            case 'delete':
-                // Delete associated applications first
-                JobApplication::whereIn('job_posting_id', $selectedIds)->delete();
-                JobPosting::whereIn('id', $selectedIds)->delete();
-                $message = 'Selected job postings deleted successfully.';
-                break;
-
-            case 'extend_deadline':
-                $newDeadline = $request->input('new_deadline');
-                if ($newDeadline) {
-                    JobPosting::whereIn('id', $selectedIds)->update([
-                        'application_deadline' => $newDeadline
-                    ]);
-                    $message = 'Deadline extended for selected job postings.';
-                } else {
-                    return redirect()->back()->with('error', 'Please provide a new deadline date.');
-                }
-                break;
-
-            default:
-                return redirect()->back()->with('error', 'Invalid action selected.');
-        }
-
-        return redirect()->back()->with('success', $message);
-    }
-
-    /**
-     * Duplicate a job posting
-     */
-    public function duplicate(JobPosting $jobPosting)
-    {
-        if (!Gate::allows('create-job-postings')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $newJob = $jobPosting->replicate();
-        $newJob->title = $jobPosting->title . ' (Copy)';
-        $newJob->is_active = false;
-        $newJob->views = 0;
-        $newJob->created_at = now();
-        $newJob->save();
-
-        return redirect()->route('job-postings.edit', $newJob->id)
-            ->with('success', 'Job posting duplicated successfully. Please review and update the details.');
-    }
-
-    /**
-     * Extend deadline for a job posting
-     */
-    public function extendDeadline(Request $request, JobPosting $jobPosting)
-    {
-        if (!Gate::allows('update-job-posting', $jobPosting)) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $request->validate([
-            'new_deadline' => 'required|date|after_or_equal:today'
-        ]);
-
-        $jobPosting->update([
-            'application_deadline' => $request->new_deadline
-        ]);
-
-        return redirect()->back()->with('success', 'Application deadline extended successfully.');
-    }
-
-    /**
-     * Export job postings
-     */
-    public function export(Request $request)
-    {
-        if (!Gate::allows('view-admin-panel')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $jobPostings = JobPosting::with(['creator', 'applications'])->get();
-
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="job_postings_' . date('Y-m-d') . '.csv"',
-        ];
-
-        $callback = function() use ($jobPostings) {
-            $file = fopen('php://output', 'w');
-
-            // Add CSV headers
-            fputcsv($file, [
-                'ID', 'Title', 'Company', 'Location', 'Employment Type',
-                'Application Deadline', 'Status', 'Views',
-                'Applications', 'Created By', 'Created At'
-            ]);
-
-            // Add data rows
-            foreach ($jobPostings as $job) {
-                fputcsv($file, [
-                    $job->id,
-                    $job->title,
-                    $job->company,
-                    $job->location,
-                    $job->employment_type,
-                    $job->application_deadline ? $job->application_deadline->format('Y-m-d') : 'No deadline',
-                    $job->is_active ? 'Active' : 'Inactive',
-                    $job->views,
-                    $job->applications->count(),
-                    $job->creator->name,
-                    $job->created_at->format('Y-m-d H:i:s')
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    /**
-     * Get filter counts for AJAX requests
-     */
-    public function getFilterCounts(Request $request)
-    {
-        if (!Gate::allows('view-admin-panel')) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $total = JobPosting::count();
-        $active = JobPosting::where('is_active', true)->count();
-        $expired = JobPosting::where('application_deadline', '<', now())->count();
-        $withoutDeadline = JobPosting::whereNull('application_deadline')->count();
-
-        return response()->json([
-            'total' => $total,
-            'active' => $active,
-            'expired' => $expired,
-            'without_deadline' => $withoutDeadline
-        ]);
-    }
-}
+﻿@extends('layouts.app')
+
+@section('title', $jobPosting->title . ' - PWD Job Portal')
+
+@section('content')
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('job-postings.public') }}">Job Postings</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ $jobPosting->title }}</li>
+        </ol>
+    </nav>
+
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h1 class="h3 text-primary mb-2">{{ $jobPosting->title }}</h1>
+                            <h5 class="text-dark mb-3">
+                                <i class="fas fa-building me-2"></i>{{ $jobPosting->company }}
+                            </h5>
+                        </div>
+                        @if($jobPosting->is_featured)
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-star"></i> Featured
+                            </span>
+                        @endif
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                                <span>{{ $jobPosting->location }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-briefcase text-muted me-2"></i>
+                                <span class="badge bg-primary">{{ $jobPosting->employment_type }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @auth
+                        @if(auth()->user()->role === 'pwd')
+                            @php
+                                $hasApplied = auth()->user()->jobApplications()
+                                    ->where('job_posting_id', $jobPosting->id)
+                                    ->exists();
+                            @endphp
+                            
+                            @if($hasApplied)
+                                <div class="alert alert-success" role="alert">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    You have already applied for this position.
+                                </div>
+                            @else
+                                <form action="{{ route('job.apply', $jobPosting) }}" method="POST" class="mb-4">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                                        <i class="fas fa-paper-plane me-2"></i> Apply Now
+                                    </button>
+                                </form>
+                            @endif
+                        @endif
+                    @else
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Please <a href="{{ route('login') }}" class="alert-link">login</a> to apply for this job.
+                        </div>
+                    @endauth
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 text-dark">
+                        <i class="fas fa-file-alt me-2"></i>Job Description
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="job-description">
+                        {!! nl2br(e($jobPosting->description)) !!}
+                    </div>
+                </div>
+            </div>
+
+            @if($jobPosting->requirements)
+                <div class="card shadow-sm mb-4 border-0">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 text-dark">
+                            <i class="fas fa-list-check me-2"></i>Requirements
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="requirements">
+                            {!! nl2br(e($jobPosting->requirements)) !!}
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Quick Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        @if($jobPosting->application_deadline)
+                            <div class="list-group-item border-0 px-0">
+                                <small class="text-muted d-block mb-1">Application Deadline</small>
+                                <strong>{{ $jobPosting->application_deadline->format('M d, Y') }}</strong>
+                            </div>
+                        @endif
+                        
+                        <div class="list-group-item border-0 px-0">
+                            <small class="text-muted d-block mb-1">Posted On</small>
+                            <strong>{{ $jobPosting->created_at->format('M d, Y') }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if($relatedJobs->count() > 0)
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 text-dark">
+                            <i class="fas fa-briefcase me-2"></i>Related Jobs
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            @foreach($relatedJobs as $relatedJob)
+                                <a href="{{ route('job-postings.public.show', $relatedJob) }}" 
+                                   class="list-group-item list-group-item-action border-0">
+                                    <h6 class="mb-1">{{ $relatedJob->title }}</h6>
+                                    <small class="text-muted d-block">{{ $relatedJob->company }}</small>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+@endsection

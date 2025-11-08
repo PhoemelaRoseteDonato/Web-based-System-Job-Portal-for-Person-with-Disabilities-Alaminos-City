@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class DocumentController extends Controller
 {
@@ -46,23 +47,43 @@ class DocumentController extends Controller
 
     public function show(Document $document)
     {
-        // Ensure the document belongs to the current user
-        if ($document->user_id !== auth()->id()) {
+        // Ensure the document belongs to the current user or is accessible by admin
+        if ($document->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized action.');
         }
 
-        return response()->file(storage_path('app/public/' . $document->file_path));
+        // Check if file is in private or public storage
+        if (str_starts_with($document->file_path, 'employer-verification/')) {
+            // File is in private storage
+            $filePath = storage_path('app/private/' . $document->file_path);
+        } else {
+            // File is in public storage
+            $filePath = storage_path('app/public/' . $document->file_path);
+        }
+        
+        // Check if file exists
+        if (!file_exists($filePath)) {
+            abort(404, 'File not found.');
+        }
+
+        return response()->file($filePath);
     }
 
     public function download(Document $document)
     {
-        // Ensure the document belongs to the current user
-        if ($document->user_id !== auth()->id()) {
+        // Ensure the document belongs to the current user or is accessible by admin
+        if ($document->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized action.');
         }
 
-        // Get the file path
-        $filePath = storage_path('app/public/' . $document->file_path);
+        // Check if file is in private or public storage
+        if (str_starts_with($document->file_path, 'employer-verification/')) {
+            // File is in private storage
+            $filePath = storage_path('app/private/' . $document->file_path);
+        } else {
+            // File is in public storage
+            $filePath = storage_path('app/public/' . $document->file_path);
+        }
 
         // Check if file exists
         if (!file_exists($filePath)) {
@@ -79,16 +100,27 @@ class DocumentController extends Controller
 
     public function destroy(Document $document)
     {
-        // Ensure the document belongs to the current user
-        if ($document->user_id !== auth()->id()) {
+        // Ensure the document belongs to the current user or is admin
+        if ($document->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized action.');
         }
 
-        // Delete file from storage
-        Storage::disk('public')->delete($document->file_path);
+        try {
+            // Check if file is in private or public storage and delete accordingly
+            if (str_starts_with($document->file_path, 'employer-verification/')) {
+                // File is in private storage - use 'local' disk
+                Storage::disk('local')->delete($document->file_path);
+            } else {
+                // File is in public storage
+                Storage::disk('public')->delete($document->file_path);
+            }
 
-        $document->delete();
+            $document->delete();
 
-        return redirect()->route('documents.index')->with('success', 'Document deleted successfully.');
+            return redirect()->route('documents.index')->with('success', 'Document deleted successfully.');
+            
+        } catch (\Exception $e) {
+            return redirect()->route('documents.index')->with('error', 'Error deleting document: ' . $e->getMessage());
+        }
     }
 }

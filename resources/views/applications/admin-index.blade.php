@@ -198,10 +198,10 @@
                                                 <td>
                                                     <span class="badge
                                                         @if($application->status == 'pending') bg-warning text-dark
-                                                        @elseif($application->status == 'shortlisted') bg-info
-                                                        @elseif($application->status == 'approved') bg-success
-                                                        @elseif($application->status == 'rejected') bg-danger
-                                                        @else bg-secondary @endif">
+                                                        @elseif($application->status == 'shortlisted') bg-info text-white
+                                                        @elseif($application->status == 'approved') bg-success text-white
+                                                        @elseif($application->status == 'rejected') bg-danger text-white
+                                                        @else bg-secondary text-white @endif">
                                                         {{ ucfirst($application->status) }}
                                                     </span>
                                                     @if($application->reviewed_at)

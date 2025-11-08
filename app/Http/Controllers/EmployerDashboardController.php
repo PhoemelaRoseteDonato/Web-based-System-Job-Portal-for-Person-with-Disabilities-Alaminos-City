@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\JobPosting;
 use App\Models\JobApplication;
 
@@ -22,12 +23,17 @@ class EmployerDashboardController extends Controller
         $profileCompletion = $user->getEmployerProfileCompletion();
         $recentActivity = $this->getRecentActivity($user);
         $upcomingDeadlines = $this->getUpcomingDeadlines($user);
+        $alerts = $this->getDashboardAlerts($user);
+        $quickActions = $this->getQuickActions($user);
 
         if ($user->isEmployerVerified()) {
             // Full statistics for verified employers
             $stats = $user->getEmployerStats();
             $performanceMetrics = $this->getPerformanceMetrics($user);
             $applicationTrends = $this->getApplicationTrends($user);
+
+            // Get recent applications with actual data
+            $recentApplications = $this->getRecentActivity($user)['recent_applications'] ?? collect();
         } else {
             // Basic statistics for unverified employers
             $stats = [
@@ -41,6 +47,7 @@ class EmployerDashboardController extends Controller
 
             $performanceMetrics = [];
             $applicationTrends = [];
+            $recentApplications = collect();
         }
 
         return view('employer.dashboard', compact(
@@ -50,7 +57,10 @@ class EmployerDashboardController extends Controller
             'recentActivity',
             'upcomingDeadlines',
             'performanceMetrics',
-            'applicationTrends'
+            'applicationTrends',
+            'alerts',
+            'quickActions',
+            'recentApplications'
         ));
     }
 
@@ -303,7 +313,7 @@ class EmployerDashboardController extends Controller
     private function getPopularJobCategories($user): array
     {
         return $user->jobPostings()
-            ->select('category', \DB::raw('count(*) as total'))
+            ->select('category', DB::raw('count(*) as total'))
             ->groupBy('category')
             ->orderBy('total', 'desc')
             ->limit(5)

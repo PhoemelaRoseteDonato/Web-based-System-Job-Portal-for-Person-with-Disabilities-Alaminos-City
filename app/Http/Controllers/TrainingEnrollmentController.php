@@ -236,8 +236,49 @@ class TrainingEnrollmentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $enrollments = $query->latest()->paginate(20);
+        if ($request->has('training_id') && $request->training_id) {
+            $query->where('skill_training_id', $request->training_id);
+        }
 
-        return view('admin.enrollments.index', compact('enrollments'));
+        $enrollments = $query->latest()->paginate(20);
+        
+        // Get all trainings for the filter dropdown
+        $trainings = SkillTraining::orderBy('title')->get();
+
+        return view('admin.enrollments.index', compact('enrollments', 'trainings'));
+    }
+
+    /**
+     * Admin: Bulk update enrollment status
+     */
+    public function bulkUpdate(Request $request)
+    {
+        // Only admin can access
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+
+        $request->validate([
+            'enrollment_ids' => 'required|string',
+            'status' => 'required|in:pending,approved,rejected,completed,cancelled',
+            'admin_notes' => 'nullable|string'
+        ]);
+
+        // Convert comma-separated IDs to array
+        $enrollmentIds = array_filter(explode(',', $request->enrollment_ids));
+
+        if (empty($enrollmentIds)) {
+            return redirect()->back()->with('error', 'No enrollments selected.');
+        }
+
+        // Update all selected enrollments
+        $updated = TrainingEnrollment::whereIn('id', $enrollmentIds)->update([
+            'status' => $request->status,
+            'notes' => $request->admin_notes,
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id()
+        ]);
+
+        return redirect()->back()->with('success', "Successfully updated {$updated} enrollment(s) to {$request->status}.");
     }
 }

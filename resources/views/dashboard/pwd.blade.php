@@ -297,14 +297,14 @@
                         <!-- Pagination -->
                         @if($jobPostings->hasPages() && $jobPostings->count() > 0)
                             <div class="card-footer bg-white border-top py-3">
-                                <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                     <div>
                                         <small class="text-muted">
                                             Showing {{ $jobPostings->firstItem() }} to {{ $jobPostings->lastItem() }} of {{ $jobPostings->total() }} results
                                         </small>
                                     </div>
-                                    <div>
-                                        {{ $jobPostings->links() }}
+                                    <div class="pagination-sm-wrapper">
+                                        {{ $jobPostings->appends(request()->query())->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                             </div>
@@ -689,6 +689,71 @@ document.addEventListener('DOMContentLoaded', function() {
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+    }
+
+    /* Compact Pagination Styles */
+    .pagination-sm-wrapper .pagination {
+        margin-bottom: 0;
+        gap: 4px;
+    }
+
+    .pagination-sm-wrapper .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 4px;
+        margin: 0 2px;
+        min-width: 32px;
+        text-align: center;
+    }
+
+    .pagination-sm-wrapper .page-item:first-child .page-link,
+    .pagination-sm-wrapper .page-item:last-child .page-link {
+        border-radius: 4px;
+    }
+
+    .pagination-sm-wrapper .page-item.active .page-link {
+        background-color: #2E8B57;
+        border-color: #2E8B57;
+        color: white;
+        font-weight: 600;
+    }
+
+    .pagination-sm-wrapper .page-item.disabled .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .pagination-sm-wrapper .page-link:hover {
+        background-color: #f8f9fa;
+        border-color: #2E8B57;
+        color: #2E8B57;
+    }
+
+    /* Make pagination responsive */
+    @media (max-width: 768px) {
+        .pagination-sm-wrapper .page-link {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.75rem;
+            min-width: 28px;
+        }
+
+        .pagination-sm-wrapper .pagination {
+            gap: 2px;
+        }
+
+        .pagination-sm-wrapper .page-link {
+            margin: 0 1px;
+        }
+    }
+
+    /* Ensure card footer has proper spacing */
+    .card-footer {
+        padding: 0.75rem 1rem;
+    }
+
+    .card-footer .d-flex {
+        gap: 0.5rem;
     }
 </style>
 @endsection

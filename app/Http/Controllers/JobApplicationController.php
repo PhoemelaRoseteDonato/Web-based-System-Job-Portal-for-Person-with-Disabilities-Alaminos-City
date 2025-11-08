@@ -14,9 +14,10 @@ use App\Notifications\ApplicationInterviewScheduled;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 /**
  * @method \App\Models\User user()
@@ -34,48 +35,36 @@ class JobApplicationController extends Controller
         // Enhanced validation checks
         $validation = $this->validateApplicationEligibility($user, $job);
         if (!$validation['can_apply']) {
-            return $this->handleApplicationError($validation, $job);
+            return $this->handleApplicationError($validation);
         }
 
         // Validate custom cover letter if provided
-        $request->validate([
-            'cover_letter' => 'nullable|string|max:2000',
-            'custom_resume' => 'nullable|file|mimes:pdf,doc,docx|max:2048'
+        $validated = $request->validate([
+            'cover_letter' => 'nullable|string|max:2000'
         ]);
 
-        // Handle custom resume upload
-        $resumePath = $user->resume_path;
-        if ($request->hasFile('custom_resume')) {
-            $resumePath = $request->file('custom_resume')->store('resumes', 'public');
-        }
-
-        // Create application with enhanced data
+        // Create application
         $application = JobApplication::create([
             'user_id' => $user->id,
             'job_posting_id' => $job->id,
             'status' => 'pending',
-            'cover_letter' => $request->cover_letter ?: $this->generateDefaultCoverLetter($user, $job),
-            'resume_path' => $resumePath,
-            'applied_via' => 'web',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
+            'cover_letter' => $validated['cover_letter'] ?? $this->generateDefaultCoverLetter($user, $job),
         ]);
-
-        // Track application in user stats
-        $user->increment('total_applications');
 
         // Notify admins and employer
         $this->sendApplicationNotifications($application);
 
-        // Log application activity
-        activity()
-            ->causedBy($user)
-            ->performedOn($application)
-            ->withProperties(['job_id' => $job->id, 'job_title' => $job->title])
-            ->log('applied for job');
+        // Log application activity if available
+        if (function_exists('activity')) {
+            activity()
+                ->causedBy($user)
+                ->performedOn($application)
+                ->withProperties(['job_id' => $job->id, 'job_title' => $job->title])
+                ->log('applied for job');
+        }
 
         return redirect()->route('applications.index')
-            ->with('success', 'Application submitted successfully! The employer will review your application.');
+            ->with('success', 'Application submitted successfully! The employer will review your application and contact you if selected for an interview.');
     }
 
     /**
@@ -85,6 +74,8 @@ class JobApplicationController extends Controller
     {
         $reasons = [];
         $canApply = true;
+        $missingResume = false;
+        $incompleteProfile = false;
 
         // Job availability checks
         if (!$job->is_active) {
@@ -97,15 +88,41 @@ class JobApplicationController extends Controller
             $reasons[] = 'The application deadline for this job has passed.';
         }
 
-        // User eligibility checks
+        // User eligibility checks - Resume
         if (!$user->hasResume()) {
             $canApply = false;
-            $reasons[] = 'Please upload your resume before applying.';
+            $missingResume = true;
+            $reasons[] = 'Please upload your resume before applying for jobs.';
         }
 
-        if (!$user->pwdProfile || empty($user->pwdProfile->disability_type)) {
+        // User eligibility checks - PWD Profile
+        $pwdProfile = $user->pwdProfile;
+        if (!$pwdProfile) {
             $canApply = false;
+            $incompleteProfile = true;
             $reasons[] = 'Please complete your PWD profile before applying.';
+        } else {
+            // Check if disability_type_id or disability_type is set
+            $hasDisabilityType = !empty($pwdProfile->disability_type_id) || !empty($pwdProfile->disability_type);
+
+            if (!$hasDisabilityType) {
+                $canApply = false;
+                $incompleteProfile = true;
+                $reasons[] = 'Please specify your disability type in your PWD profile.';
+            }
+
+            // Check for other required profile fields
+            if (empty($user->phone)) {
+                $canApply = false;
+                $incompleteProfile = true;
+                $reasons[] = 'Please add your phone number to your profile.';
+            }
+
+            if (empty($user->address)) {
+                $canApply = false;
+                $incompleteProfile = true;
+                $reasons[] = 'Please add your address to your profile.';
+            }
         }
 
         // Check if already applied
@@ -115,38 +132,58 @@ class JobApplicationController extends Controller
 
         if ($existingApplication) {
             $canApply = false;
-            $reasons[] = 'You have already applied for this job.';
+            $reasons[] = 'You have already applied for this job. Check your applications to see the status.';
         }
 
         return [
             'can_apply' => $canApply,
             'reasons' => $reasons,
-            'missing_resume' => !$user->hasResume(),
-            'incomplete_profile' => !$user->pwdProfile || empty($user->pwdProfile->disability_type),
+            'missing_resume' => $missingResume,
+            'incomplete_profile' => $incompleteProfile,
         ];
     }
 
     /**
-     * Handle application errors appropriately
+     * Handle application errors and redirect appropriately
      */
-    private function handleApplicationError($validation, $job)
+    private function handleApplicationError($eligibility)
     {
-        if ($validation['missing_resume']) {
-            return redirect()->back()
-                ->with('error', 'Please upload your resume before applying for jobs.')
-                ->with('show_resume_modal', true);
+        // If both resume and profile are missing, prioritize profile completion
+        if ($eligibility['incomplete_profile']) {
+            $message = 'Your profile is incomplete. ';
+
+            if ($eligibility['missing_resume']) {
+                $message .= 'Please complete your PWD profile and upload your resume before applying for jobs.';
+            } else {
+                $message .= 'Please complete your PWD profile with all required information.';
+            }
+
+            if (count($eligibility['reasons']) > 0) {
+                $message .= ' Missing: ' . implode(', ', $eligibility['reasons']);
+            }
+
+            return redirect()->route('pwd.profile.create')->with([
+                'error' => $message,
+                'incomplete_requirements' => $eligibility['reasons']
+            ]);
         }
 
-        if ($validation['incomplete_profile']) {
-            return redirect()->route('profile.pwd-complete-form')
-                ->with('warning', 'Please complete your PWD profile before applying for jobs.');
+        if ($eligibility['missing_resume']) {
+            return redirect()->back()->with([
+                'error' => 'You must upload your resume before applying for jobs. Your resume helps employers understand your qualifications.',
+                'show_resume_modal' => true,
+                'redirect_after_upload' => request()->url()
+            ]);
         }
 
-        return redirect()->back()
-            ->with('error', implode(' ', $validation['reasons']));
-    }
+        // For other errors (job inactive, deadline passed, already applied)
+        $errorMessage = implode(' ', $eligibility['reasons']);
 
-    /**
+        return redirect()->back()->with([
+            'error' => $errorMessage,
+            'application_blocked' => true
+        ]);
+    }    /**
      * Generate default cover letter
      */
     private function generateDefaultCoverLetter($user, $job)
@@ -324,58 +361,55 @@ class JobApplicationController extends Controller
     /**
      * Send status notification with enhanced logging
      */
-    /**
- * Send status notification with enhanced logging
- */
-protected function sendStatusNotification(JobApplication $application, string $status, ?string $reason = null): void
-{
+    protected function sendStatusNotification(JobApplication $application, string $status, ?string $reason = null): void
+    {
     $user = $application->user;
 
-    \Log::info("🚀 === SENDING STATUS NOTIFICATION ===");
-    \Log::info("📋 Application ID: " . $application->id);
-    \Log::info("👤 User ID: " . $user->id);
-    \Log::info("📧 User Email: " . $user->email);
-    \Log::info("🔄 Status: " . $status);
-    \Log::info("📝 Reason: " . ($reason ?? 'None'));
-    \Log::info("💼 Job: " . ($application->jobPosting->title ?? 'No job'));
-    \Log::info("⚙️ Queue Driver: " . config('queue.default'));
+    Log::info("🚀 === SENDING STATUS NOTIFICATION ===");
+    Log::info("📋 Application ID: " . $application->id);
+    Log::info("👤 User ID: " . $user->id);
+    Log::info("📧 User Email: " . $user->email);
+    Log::info("🔄 Status: " . $status);
+    Log::info("📝 Reason: " . ($reason ?? 'None'));
+    Log::info("💼 Job: " . ($application->jobPosting->title ?? 'No job'));
+    Log::info("⚙️ Queue Driver: " . config('queue.default'));
 
     try {
         // Test basic email first
-        \Mail::raw('Test email before notification', function ($message) use ($user) {
+        Mail::raw('Test email before notification', function ($message) use ($user) {
             $message->to($user->email)
                     ->subject('Test Email Before Notification');
         });
-        \Log::info("✅ Basic email test passed");
+        Log::info("✅ Basic email test passed");
 
         switch ($status) {
             case 'approved':
                 $user->notify(new ApplicationApproved($application));
-                \Log::info("✅ APPROVED notification sent to: " . $user->email);
+                Log::info("✅ APPROVED notification sent to: " . $user->email);
                 break;
 
             case 'rejected':
                 $user->notify(new ApplicationRejected($application, $reason));
-                \Log::info("✅ REJECTED notification sent to: " . $user->email);
+                Log::info("✅ REJECTED notification sent to: " . $user->email);
                 break;
 
             case 'shortlisted':
                 $user->notify(new ApplicationShortlisted($application));
-                \Log::info("✅ SHORTLISTED notification sent to: " . $user->email);
+                Log::info("✅ SHORTLISTED notification sent to: " . $user->email);
                 break;
 
             case 'hired':
                 $user->notify(new ApplicationApproved($application));
-                \Log::info("✅ HIRED notification sent to: " . $user->email);
+                Log::info("✅ HIRED notification sent to: " . $user->email);
                 break;
         }
 
-        \Log::info("🎉 Notification process completed successfully");
+        Log::info("🎉 Notification process completed successfully");
 
     } catch (\Exception $e) {
-        \Log::error('💥 NOTIFICATION FAILED: ' . $e->getMessage());
-        \Log::error('📄 File: ' . $e->getFile() . ':' . $e->getLine());
-        \Log::error('🔍 Trace: ' . $e->getTraceAsString());
+        Log::error('💥 NOTIFICATION FAILED: ' . $e->getMessage());
+        Log::error('📄 File: ' . $e->getFile() . ':' . $e->getLine());
+        Log::error('🔍 Trace: ' . $e->getTraceAsString());
     }
 }
 

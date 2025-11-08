@@ -8,10 +8,13 @@
         <div class="col-md-11 col-lg-10">
             <!-- Page Header -->
             <div class="page-header mb-4">
-                <h1 class="h2 fw-bold text-primary mb-2">
-                    <i class="fas fa-headset me-2"></i>Contact Us
+                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill mb-3">
+                    <i class="fas fa-headset me-2"></i>Get In Touch
+                </span>
+                <h1 class="display-5 fw-bold text-gray-900 mb-3">
+                    Contact Our Support Team
                 </h1>
-                <p class="text-muted">Get in touch with our PWD Job Portal support team. We're here to help you with job opportunities, training programs, and accessibility support.</p>
+                <p class="lead text-muted">We're here to help you with job opportunities, training programs, and accessibility support.</p>
             </div>
 
             <div class="row g-4">
@@ -20,12 +23,12 @@
                     <!-- Quick Contact Cards -->
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-body">
-                            <h5 class="card-title text-primary mb-3">
+                            <h5 class="card-title text-success mb-3">
                                 <i class="fas fa-info-circle me-2"></i>Quick Support
                             </h5>
 
                             <div class="d-flex align-items-start mb-3 p-3 bg-light rounded">
-                                <i class="fas fa-briefcase text-primary me-3 mt-1 fs-5"></i>
+                                <i class="fas fa-briefcase text-success me-3 mt-1 fs-5"></i>
                                 <div>
                                     <h6 class="fw-bold mb-1">Job Applications</h6>
                                     <p class="text-muted small mb-0">Need help with job applications or employer matching?</p>
@@ -41,7 +44,7 @@
                             </div>
 
                             <div class="d-flex align-items-start p-3 bg-light rounded">
-                                <i class="fas fa-universal-access text-warning me-3 mt-1 fs-5"></i>
+                                <i class="fas fa-universal-access text-success me-3 mt-1 fs-5"></i>
                                 <div>
                                     <h6 class="fw-bold mb-1">Accessibility Support</h6>
                                     <p class="text-muted small mb-0">Report accessibility issues or request accommodations</p>
@@ -53,13 +56,13 @@
                     <!-- Contact Details -->
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
-                            <h5 class="card-title text-primary mb-3">
+                            <h5 class="card-title text-success mb-3">
                                 <i class="fas fa-map-marker-alt me-2"></i>Our Office
                             </h5>
 
                             <div class="contact-info">
                                 <div class="d-flex align-items-start mb-3">
-                                    <i class="fas fa-map-marker-alt text-primary me-3 mt-1"></i>
+                                    <i class="fas fa-map-marker-alt text-success me-3 mt-1"></i>
                                     <div>
                                         <h6 class="fw-bold mb-1">Office Address</h6>
                                         <p class="text-muted mb-0 small">
@@ -71,7 +74,7 @@
                                 </div>
 
                                 <div class="d-flex align-items-start mb-3">
-                                    <i class="fas fa-phone text-primary me-3 mt-1"></i>
+                                    <i class="fas fa-phone text-success me-3 mt-1"></i>
                                     <div>
                                         <h6 class="fw-bold mb-1">Contact Numbers</h6>
                                         <p class="text-muted mb-0 small">
@@ -82,7 +85,7 @@
                                 </div>
 
                                 <div class="d-flex align-items-start mb-3">
-                                    <i class="fas fa-envelope text-primary me-3 mt-1"></i>
+                                    <i class="fas fa-envelope text-success me-3 mt-1"></i>
                                     <div>
                                         <h6 class="fw-bold mb-1">Email Address</h6>
                                         <p class="text-muted mb-0 small">
@@ -93,7 +96,7 @@
                                 </div>
 
                                 <div class="d-flex align-items-start">
-                                    <i class="fas fa-clock text-primary me-3 mt-1"></i>
+                                    <i class="fas fa-clock text-success me-3 mt-1"></i>
                                     <div>
                                         <h6 class="fw-bold mb-1">Office Hours</h6>
                                         <p class="text-muted mb-0 small">
@@ -123,7 +126,7 @@
                 <!-- Contact Form -->
                 <div class="col-lg-8">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-primary text-white py-3">
+                        <div class="card-header text-white py-3" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                             <h5 class="mb-0">
                                 <i class="fas fa-paper-plane me-2"></i>
                                 Send Us a Message
@@ -209,10 +212,10 @@
                                     </div>
 
                                     <div class="col-12">
-                                        <button type="submit" class="btn btn-primary px-4 py-2">
+                                        <button type="submit" class="btn btn-success px-5 py-3 shadow-lg" style="border-radius: 50px; font-weight: 600;">
                                             <i class="fas fa-paper-plane me-2"></i>Send Message
                                         </button>
-                                        <button type="reset" class="btn btn-outline-secondary px-4 py-2 ms-2">
+                                        <button type="reset" class="btn btn-outline-secondary px-4 py-2 ms-2" style="border-radius: 50px;">
                                             <i class="fas fa-undo me-2"></i>Reset Form
                                         </button>
                                     </div>
@@ -228,7 +231,7 @@
                 <div class="col-12">
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
-                            <h5 class="card-title text-primary mb-4">
+                            <h5 class="card-title text-success mb-4">
                                 <i class="fas fa-rocket me-2"></i>
                                 Quick Resources
                             </h5>
@@ -236,8 +239,8 @@
                             <div class="row g-4">
                                 <div class="col-md-4">
                                     <div class="text-center p-3 h-100">
-                                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                            <i class="fas fa-user-plus text-primary fs-4"></i>
+                                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-user-plus text-success fs-4"></i>
                                         </div>
                                         <h6 class="fw-bold">PWD Registration</h6>
                                         <p class="text-muted small mb-0">Complete your PWD profile and get verified to access exclusive job opportunities.</p>
@@ -254,8 +257,8 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="text-center p-3 h-100">
-                                        <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                            <i class="fas fa-chart-line text-warning fs-4"></i>
+                                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-chart-line text-success fs-4"></i>
                                         </div>
                                         <h6 class="fw-bold">Career Development</h6>
                                         <p class="text-muted small mb-0">Access training programs and skill development courses to enhance your employability.</p>
@@ -383,13 +386,27 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .form-control:focus, .form-select:focus {
-    border-color: #166534;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+    border-color: #10b981;
+    box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.1);
 }
 
 .btn {
     border-radius: 8px;
     font-weight: 500;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+}
+
+.text-gray-900 {
+    color: #111827;
 }
 </style>
 @endsection

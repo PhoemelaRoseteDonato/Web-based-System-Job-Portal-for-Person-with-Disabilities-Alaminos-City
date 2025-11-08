@@ -1,34 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Skill Training - PWD System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    @extends('layouts.admin')
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">PWD System - Alaminos City</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link text-white" href="{{ route('dashboard') }}">Dashboard</a>
-                <a class="nav-link text-white" href="{{ route('admin.skill-trainings.index') }}">Skill Trainings</a>
-                <a class="nav-link text-white" href="{{ route('logout') }}"
-                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                    Logout
-                </a>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                    @csrf
-                </form>
-            </div>
-        </div>
-    </nav>
+@extends('layouts.admin')
 
-    <div class="container mt-4">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="card">
+@section('title', 'Create Skill Training - Admin Panel')
+
+@section('page-title', 'Create Skill Training')
+
+@section('content')
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-graduation-cap"></i> Create New Skill Training
+        </h1>
+        <a href="{{ route('admin.skill-trainings.index') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Trainings
+        </a>
+    </div>
+
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-exclamation-triangle"></i> Validation Errors:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
                     <div class="card-header bg-primary text-white">
                         <h4 class="mb-0">Create New Skill Training</h4>
                     </div>
@@ -125,7 +127,5 @@
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+@endsection

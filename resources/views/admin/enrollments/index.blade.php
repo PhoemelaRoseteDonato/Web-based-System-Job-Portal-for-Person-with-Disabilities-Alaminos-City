@@ -363,11 +363,13 @@
 @endsection
 
 @section('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Select All functionality
-    const selectAll = document.getElementById('selectAll');
-    const checkboxes = document.querySelectorAll('.enrollment-checkbox:not(:disabled)');
+    @parent
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select All functionality
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.enrollment-checkbox:not(:disabled)');
 
     if (selectAll) {
         selectAll.addEventListener('change', function() {

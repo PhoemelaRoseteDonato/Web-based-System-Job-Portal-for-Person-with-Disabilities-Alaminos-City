@@ -4,13 +4,16 @@
 
 @section('content')
 <!-- Hero Section -->
-<section class="hero-section bg-gradient-primary text-white py-5 mt-8">
+<section class="hero-section text-white py-5 mt-5">
     <div class="container py-5">
         <div class="row align-items-center">
             <div class="col-lg-8 mx-auto text-center">
-                <h1 class="display-4 fw-bold mb-4">About Our Mission</h1>
-                <p class="lead mb-4">
-                    Empowering Persons with Disabilities through inclusive employment opportunities and skill development
+                <span class="badge bg-white text-success px-4 py-2 rounded-pill mb-4" style="font-size: 1rem;">
+                    <i class="fas fa-info-circle me-2"></i>About Us
+                </span>
+                <h1 class="display-3 fw-bold mb-4">Empowering PWD Professionals</h1>
+                <p class="lead mb-4" style="font-size: 1.3rem;">
+                    Creating inclusive employment opportunities and building bridges between talented PWD professionals and forward-thinking employers
                 </p>
             </div>
         </div>
@@ -24,7 +27,7 @@
             <div class="col-lg-6 mb-5">
                 <div class="mission-card">
                     <div class="icon-wrapper mb-4">
-                        <i class="fas fa-bullseye fa-3x text-primary"></i>
+                        <i class="fas fa-bullseye fa-3x text-success"></i>
                     </div>
                     <h3 class="mb-3">Our Mission</h3>
                     <p class="text-muted">
@@ -61,7 +64,7 @@
         <div class="row text-center">
             <div class="col-md-3 col-6 mb-4">
                 <div class="stat-item">
-                    <h3 class="text-primary fw-bold display-4">{{ $stats['jobs_posted'] ?? 0 }}+</h3>
+                    <h3 class="text-success fw-bold display-4">{{ $stats['jobs_posted'] ?? 0 }}+</h3>
                     <p class="text-muted mb-0">Jobs Posted</p>
                 </div>
             </div>
@@ -73,13 +76,13 @@
             </div>
             <div class="col-md-3 col-6 mb-4">
                 <div class="stat-item">
-                    <h3 class="text-info fw-bold display-4">{{ $stats['partner_companies'] ?? 0 }}+</h3>
+                    <h3 class="text-success fw-bold display-4">{{ $stats['partner_companies'] ?? 0 }}+</h3>
                     <p class="text-muted mb-0">Partner Companies</p>
                 </div>
             </div>
             <div class="col-md-3 col-6 mb-4">
                 <div class="stat-item">
-                    <h3 class="text-warning fw-bold display-4">{{ $stats['success_stories'] ?? 0 }}+</h3>
+                    <h3 class="text-success fw-bold display-4">{{ $stats['success_stories'] ?? 0 }}+</h3>
                     <p class="text-muted mb-0">Success Stories</p>
                 </div>
             </div>
@@ -100,7 +103,7 @@
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="feature-card text-center p-4 h-100">
                     <div class="feature-icon mb-4">
-                        <i class="fas fa-briefcase fa-3x text-primary"></i>
+                        <i class="fas fa-briefcase fa-3x text-success"></i>
                     </div>
                     <h4 class="mb-3">Job Matching</h4>
                     <p class="text-muted">
@@ -122,7 +125,7 @@
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="feature-card text-center p-4 h-100">
                     <div class="feature-icon mb-4">
-                        <i class="fas fa-hands-helping fa-3x text-info"></i>
+                        <i class="fas fa-hands-helping fa-3x text-success"></i>
                     </div>
                     <h4 class="mb-3">Career Guidance</h4>
                     <p class="text-muted">
@@ -133,7 +136,7 @@
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="feature-card text-center p-4 h-100">
                     <div class="feature-icon mb-4">
-                        <i class="fas fa-building fa-3x text-warning"></i>
+                        <i class="fas fa-building fa-3x text-success"></i>
                     </div>
                     <h4 class="mb-3">Employer Partnership</h4>
                     <p class="text-muted">
@@ -144,7 +147,7 @@
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="feature-card text-center p-4 h-100">
                     <div class="feature-icon mb-4">
-                        <i class="fas fa-universal-access fa-3x text-danger"></i>
+                        <i class="fas fa-universal-access fa-3x text-success"></i>
                     </div>
                     <h4 class="mb-3">Accessibility Support</h4>
                     <p class="text-muted">
@@ -155,7 +158,7 @@
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="feature-card text-center p-4 h-100">
                     <div class="feature-icon mb-4">
-                        <i class="fas fa-users fa-3x text-secondary"></i>
+                        <i class="fas fa-users fa-3x text-success"></i>
                     </div>
                     <h4 class="mb-3">Community Building</h4>
                     <p class="text-muted">
@@ -180,7 +183,7 @@
             <div class="col-md-6 mb-4">
                 <div class="value-item d-flex">
                     <div class="value-icon me-4">
-                        <i class="fas fa-balance-scale fa-2x text-primary"></i>
+                        <i class="fas fa-balance-scale fa-2x text-success"></i>
                     </div>
                     <div>
                         <h4 class="mb-3">Inclusion</h4>
@@ -206,7 +209,7 @@
             <div class="col-md-6 mb-4">
                 <div class="value-item d-flex">
                     <div class="value-icon me-4">
-                        <i class="fas fa-handshake fa-2x text-info"></i>
+                        <i class="fas fa-handshake fa-2x text-success"></i>
                     </div>
                     <div>
                         <h4 class="mb-3">Collaboration</h4>
@@ -219,7 +222,7 @@
             <div class="col-md-6 mb-4">
                 <div class="value-item d-flex">
                     <div class="value-icon me-4">
-                        <i class="fas fa-rocket fa-2x text-warning"></i>
+                        <i class="fas fa-rocket fa-2x text-success"></i>
                     </div>
                     <div>
                         <h4 class="mb-3">Innovation</h4>
@@ -260,17 +263,32 @@
 </section>
 
 <!-- CTA Section -->
-<section class="py-5 bg-primary text-white">
-    <div class="container">
+<section class="py-5 position-relative overflow-hidden" 
+         style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+    <!-- Background Pattern -->
+    <div class="position-absolute w-100 h-100 top-0 start-0" style="opacity: 0.1;">
+        <div class="position-absolute" style="top: -50px; right: -50px; width: 300px; height: 300px; 
+             background: white; border-radius: 50%;"></div>
+        <div class="position-absolute" style="bottom: -100px; left: -100px; width: 400px; height: 400px; 
+             background: white; border-radius: 50%;"></div>
+    </div>
+
+    <div class="container py-5 position-relative" style="z-index: 1;">
         <div class="row text-center">
             <div class="col-lg-8 mx-auto">
-                <h2 class="mb-3">Join Our Mission</h2>
-                <p class="lead mb-4">Be part of the movement to create inclusive employment opportunities for Persons with Disabilities.</p>
-                <div class="cta-buttons">
-                    <a href="{{ route('register') }}" class="btn btn-light btn-lg me-3">
+                <h2 class="display-4 fw-bold text-white mb-3">Join Our Mission</h2>
+                <p class="lead text-white mb-5" style="font-size: 1.3rem; opacity: 0.95;">
+                    Be part of the movement to create inclusive employment opportunities for Persons with Disabilities.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a href="{{ route('register') }}" 
+                       class="btn btn-light btn-lg px-5 py-3 shadow-lg" 
+                       style="border-radius: 50px; font-weight: 600;">
                         <i class="fas fa-user-plus me-2"></i>Join as Job Seeker
                     </a>
-                    <a href="{{ route('contact') }}" class="btn btn-outline-light btn-lg">
+                    <a href="{{ route('contact') }}" 
+                       class="btn btn-outline-light btn-lg px-5 py-3" 
+                       style="border-radius: 50px; font-weight: 600; border-width: 2px;">
                         <i class="fas fa-building me-2"></i>Partner With Us
                     </a>
                 </div>
@@ -283,7 +301,7 @@
 @section('styles')
 <style>
 .hero-section {
-    background: linear-gradient(135deg, #00695C 0%, #00695C 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .section-title {
@@ -299,7 +317,7 @@
     transform: translateX(-50%);
     width: 60px;
     height: 3px;
-    background: #00695C;
+    background: #10b981;
 }
 
 .mission-card, .vision-card, .feature-card {

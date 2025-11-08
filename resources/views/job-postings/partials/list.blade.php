@@ -110,10 +110,6 @@
         @endforeach
     </div>
 
-    <!-- Pagination -->
-    <div class="d-flex justify-content-center mt-4">
-        {{ $jobPostings->links() }}
-    </div>
 @else
     <div class="text-center py-5">
         <i class="fas fa-briefcase fa-4x text-muted mb-3"></i>

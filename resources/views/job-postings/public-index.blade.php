@@ -111,10 +111,16 @@
 
                         {{-- Active Filters Display --}}
                         @php
+                            $disabilityTypeName = null;
+                            if (!empty(request('disability_type_id')) && isset($disabilityTypes)) {
+                                $disabilityCollection = is_array($disabilityTypes) ? collect($disabilityTypes) : $disabilityTypes;
+                                $selectedType = $disabilityCollection->firstWhere('id', request('disability_type_id'));
+                                $disabilityTypeName = $selectedType ? $selectedType->type : 'Selected';
+                            }
+
                             $activeFilters = array_filter([
                                 'Search' => !empty(request('q')) ? '"' . request('q') . '"' : null,
-                                'Disability Type' => !empty(request('disability_type_id')) ?
-                                    ($disabilityTypes->firstWhere('id', request('disability_type_id'))->type ?? 'Selected') : null,
+                                'Disability Type' => $disabilityTypeName,
                                 'Job Type' => !empty(request('employment_type')) ? request('employment_type') : null,
                                 'Location' => !empty(request('location')) ? request('location') : null,
                                 'Sort By' => !empty(request('sort_by')) ? ucfirst(request('sort_by')) : null,
@@ -367,8 +373,8 @@
                     @if(isset($jobPostings) && $jobPostings->hasPages())
                         <div class="row mt-4">
                             <div class="col-12">
-                                <div class="d-flex justify-content-center">
-                                    {{ $jobPostings->withQueryString()->links() }}
+                                <div class="d-flex justify-content-center pagination-compact-wrapper">
+                                    {{ $jobPostings->withQueryString()->links('pagination::bootstrap-4') }}
                                 </div>
                             </div>
                         </div>
@@ -463,6 +469,62 @@
 }
 .badge-filter {
     font-size: 0.75rem;
+}
+
+/* Compact Pagination Styles */
+.pagination-compact-wrapper .pagination {
+    margin-bottom: 0;
+    gap: 4px;
+}
+
+.pagination-compact-wrapper .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: 4px;
+    margin: 0 2px;
+    min-width: 32px;
+    text-align: center;
+}
+
+.pagination-compact-wrapper .page-item:first-child .page-link,
+.pagination-compact-wrapper .page-item:last-child .page-link {
+    border-radius: 4px;
+}
+
+.pagination-compact-wrapper .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+    font-weight: 600;
+}
+
+.pagination-compact-wrapper .page-item.disabled .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.pagination-compact-wrapper .page-link:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+    color: #007bff;
+}
+
+/* Make pagination responsive */
+@media (max-width: 768px) {
+    .pagination-compact-wrapper .page-link {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+        min-width: 28px;
+    }
+
+    .pagination-compact-wrapper .pagination {
+        gap: 2px;
+    }
+
+    .pagination-compact-wrapper .page-link {
+        margin: 0 1px;
+    }
 }
 </style>
 @endsection

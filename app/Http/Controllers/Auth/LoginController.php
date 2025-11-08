@@ -186,6 +186,14 @@ class LoginController extends Controller
     // Check if user account is active
     if (!$user->isActive()) {
         Auth::logout();
+
+        Log::channel('security')->warning('Inactive account login attempt', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         throw ValidationException::withMessages([
             $this->username() => 'Your account has been deactivated. Please contact administrator.',
         ]);
@@ -194,9 +202,50 @@ class LoginController extends Controller
     // Check if account is locked
     if ($user->isAccountLocked()) {
         Auth::logout();
-        throw ValidationException::withMessages([
-            $this->username() => 'Account is temporarily locked. Please try again later.',
+
+        Log::channel('security')->warning('Locked account login attempt', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'locked_until' => $user->account_locked_until,
+            'ip' => $request->ip(),
         ]);
+
+        throw ValidationException::withMessages([
+            $this->username() => 'Account is temporarily locked until ' . $user->getTimeUntilUnlock() . '. Please try again later.',
+        ]);
+    }
+
+    // Check for security warnings
+    $securityScore = $user->calculateSecurityScore();
+    if ($securityScore < 60) {
+        session()->flash('security_warning', true);
+        session()->flash('security_score', $securityScore);
+
+        $recommendations = collect($user->getSecurityRecommendations())
+            ->filter(fn($r) => $r['priority'] === 'high')
+            ->pluck('message')
+            ->toArray();
+
+        session()->flash('security_recommendations', $recommendations);
+
+        Log::channel('security')->info('Low security score login', [
+            'user_id' => $user->id,
+            'score' => $securityScore,
+            'ip' => $request->ip(),
+        ]);
+    }
+
+    // Check for password expiry
+    if ($user->isPasswordExpired()) {
+        session()->flash('warning', 'Your password has expired. Please change it immediately.');
+
+        Log::channel('security')->warning('Expired password login', [
+            'user_id' => $user->id,
+            'last_changed' => $user->last_password_changed_at,
+            'ip' => $request->ip(),
+        ]);
+    } elseif ($user->getDaysUntilPasswordExpires() <= 7) {
+        session()->flash('info', 'Your password will expire in ' . $user->getDaysUntilPasswordExpires() . ' days. Please consider changing it soon.');
     }
 
     // Reset failed login attempts on successful login
@@ -207,22 +256,42 @@ class LoginController extends Controller
     // Update last login timestamp using your existing method
     $user->updateLastLogin($request->ip());
 
-    // Log regular user login
-    Log::channel('auth')->info('User logged in', [
+    // Enhanced security logging
+    Log::channel('auth')->info('Successful user login', [
         'user_id' => $user->id,
         'name' => $user->name,
+        'email' => $user->email,
         'role' => $user->role,
         'ip' => $request->ip(),
+        'user_agent' => substr($request->userAgent(), 0, 200),
+        'security_score' => $securityScore,
+        'login_count' => $user->login_count + 1,
+        'timestamp' => now()->toDateTimeString(),
     ]);
 
-    // ROLE-BASED REDIRECTION - FIXED VERSION
+    // Log activity in activity log if available
+    if (function_exists('activity')) {
+        activity()
+            ->causedBy($user)
+            ->withProperties([
+                'ip' => $request->ip(),
+                'user_agent' => substr($request->userAgent(), 0, 200),
+                'security_score' => $securityScore,
+            ])
+            ->log('user_logged_in');
+    }
+
+    // ROLE-BASED REDIRECTION - ENHANCED VERSION
     if ($user->isAdmin()) {
         Log::channel('admin')->info('Admin user logged in', [
             'user_id' => $user->id,
             'name' => $user->name,
             'ip' => $request->ip(),
+            'last_admin_action' => $user->last_admin_action_at,
         ]);
-        return redirect()->route('admin.dashboard');
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', 'Welcome back, ' . $user->name . '!');
     }
 
     // For PWD users
@@ -231,25 +300,40 @@ class LoginController extends Controller
             return redirect()->route('profile.pwd-complete-form')
                 ->with('info', 'Please complete your PWD profile to access all features.');
         }
+
+        // Check resume requirement
+        if (!$user->hasResume()) {
+            session()->flash('info', 'Upload your resume to apply for jobs.');
+        }
+
         // Redirect PWD users to their dashboard after profile completion
-        return redirect()->route('pwd.dashboard');
+        return redirect()->route('pwd.dashboard')
+            ->with('success', 'Welcome back, ' . $user->name . '!');
     }
 
-    // For employers - FIXED: Add employer dashboard redirect
+    // For employers - ENHANCED
     if ($user->isEmployer()) {
         Log::channel('employer')->info('Employer user logged in', [
             'user_id' => $user->id,
             'name' => $user->name,
             'company' => $user->company_name,
+            'verification_status' => $user->employer_verification_status,
             'ip' => $request->ip(),
         ]);
 
+        // Check verification status
+        if (!$user->isEmployerVerified()) {
+            session()->flash('info', 'Complete employer verification to post jobs.');
+        }
+
         // Always redirect employers to their dashboard
-        return redirect()->route('employer.dashboard');
+        return redirect()->route('employer.dashboard')
+            ->with('success', 'Welcome back, ' . $user->name . '!');
     }
 
     // Default redirect for regular users
-    return redirect()->route('dashboard');
+    return redirect()->route('dashboard')
+        ->with('success', 'Welcome back, ' . $user->name . '!');
 }
 
     /**
